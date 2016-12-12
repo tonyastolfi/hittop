@@ -2,59 +2,67 @@
 #define CASPER_PARSER_H
 
 #include <system_error>
+#include <type_traits>
 
 namespace casper {
 
 template <typename Grammar> class parser;
 
-enum Condition : int { OK = 0, INCOMPLETE, BAD_CHAR, UNKNOWN_ERROR };
+enum struct ParseError : int { INCOMPLETE = 1, BAD_CHAR, UNKNOWN };
 
-class ParserError {
+class ParseErrorCategory : public std::error_category {
 public:
-  static std::error_category &get_category() {
-    static Category c;
-    return c;
-  }
+  const char *name() const noexcept override { return "parse error"; }
 
-private:
-  struct Category : std::error_category {
-    const char *name() const noexcept override { return "parser"; }
-
-    std::string message(const int c) const override {
-      switch (static_cast<Condition>(c)) {
-      case OK:
-        return "ok";
-      case INCOMPLETE:
-        return "incomplete";
-      case BAD_CHAR:
-        return "unexpected character";
-      case UNKNOWN_ERROR:
-        return "unknown error";
-      }
+  std::string message(const int c) const override {
+    switch (static_cast<ParseError>(c)) {
+    case ParseError::INCOMPLETE:
+      return "incomplete";
+    case ParseError::BAD_CHAR:
+      return "unexpected character";
+    case ParseError::UNKNOWN:
+      return "unknown error";
     }
-  };
+  }
 };
 
-std::error_condition make_condition(Condition c) {
-  return std::error_condition(static_cast<int>(c), ParserError::get_category());
+std::error_condition make_error_condition(const ParseError e) {
+  static ParseErrorCategory category;
+  return std::error_condition{static_cast<int>(e), category};
 }
 
-template <typename Iterator> struct ParseResult {
-  ParseResult() : next{}, condition{make_condition(OK)} {}
+template <typename T> class Fallible {
+public:
+  Fallible() : value_{}, error_{} {}
 
-  ParseResult(Iterator n, Condition c)
-      : next{std::move(n)}, condition{make_condition(c)} {}
+  /* implicit */ Fallible(T v) : value_{std::move(v)}, error_{} {}
 
-  Iterator next;
-  std::error_condition condition;
+  Fallible(T v, std::error_condition ec)
+      : value_{std::move(v)}, error_{std::move(ec)} {}
+
+  const T &get() const { return value_; }
+
+  T &&consume() { return std::move(value_); }
+
+  const std::error_condition &error() const { return error_; }
+
+private:
+  T value_;
+  std::error_condition error_;
 };
 
 template <typename Iterator>
-bool operator==(const ParseResult<Iterator> &lhs,
-                const ParseResult<Iterator> &rhs) {
-  return lhs.next == rhs.next && lhs.condition == rhs.condition;
+bool operator==(const Fallible<Iterator> &lhs, const Fallible<Iterator> &rhs) {
+  return lhs.get() == rhs.get() && lhs.error() == rhs.error();
 }
 
 } // namespace casper
+
+namespace std {
+template <>
+struct is_error_condition_enum<casper::ParseError>
+    : std::integral_constant<bool, true> {};
+
+} // namespace std
 
 #endif // CASPER_PARSER_H

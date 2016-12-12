@@ -2,24 +2,24 @@
 #include "casper/parser.h"
 
 TEST(ParserErrorTest, Ctor) {
-  std::error_condition c = make_condition(casper::OK);
-  EXPECT_EQ(c.value(), casper::OK);
+  std::error_condition c{casper::ParseError::BAD_CHAR};
+  EXPECT_EQ(c.value(), static_cast<int>(casper::ParseError::BAD_CHAR));
 }
 
-TEST(ParseResult, DefaultCtor) {
-  casper::ParseResult<char*> r;
-  EXPECT_EQ(r.next, nullptr);
-  EXPECT_EQ(r.condition, make_condition(casper::OK));
+TEST(Fallible, DefaultCtor) {
+  casper::Fallible<char*> r;
+  EXPECT_EQ(r.get(), nullptr);
+  EXPECT_FALSE(r.error());
 }
 
-TEST(ParseResult, CopyConstruct) {
-  casper::ParseResult<char*> r{"foo", casper::INCOMPLETE};
+TEST(Fallible, CopyConstruct) {
+  casper::Fallible<const char*> r{"foo", casper::ParseError::INCOMPLETE};
   auto s = r;
   EXPECT_EQ(s, r);
 }
 
-TEST(ParseResult, CopyAssign) {
-  casper::ParseResult<char*> r{"foo", casper::INCOMPLETE};
+TEST(Fallible, CopyAssign) {
+  casper::Fallible<const char*> r{"foo", casper::ParseError::INCOMPLETE};
   decltype(r) s;
   s = r;
   EXPECT_EQ(s, r);
