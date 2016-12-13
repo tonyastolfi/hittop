@@ -6,7 +6,7 @@
 
 namespace casper {
 
-template <typename Grammar> class parser;
+template <typename Grammar> class Parser;
 
 enum struct ParseError : int { INCOMPLETE = 1, BAD_CHAR, UNKNOWN };
 

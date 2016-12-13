@@ -3,8 +3,8 @@
 
 #include <iterator>
 
-using literal_a = casper::literal<'a'>;
-casper::parser<literal_a> parse_a;
+using literal_a = casper::Literal<'a'>;
+casper::Parser<literal_a> parse_a;
 
 TEST(ParseLiteral, Ok) {
   std::string input = "abc";

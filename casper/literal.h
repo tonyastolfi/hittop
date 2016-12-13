@@ -5,9 +5,9 @@
 
 namespace casper {
 
-template <char Ch> struct literal {};
+template <char Ch> struct Literal {};
 
-template <char Ch> class parser<literal<Ch>> {
+template <char Ch> class Parser<Literal<Ch>> {
 public:
   template <typename Range>
   auto operator()(const Range &input) const
