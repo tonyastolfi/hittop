@@ -1,3 +1,5 @@
+// Basic grammar terminal that parses a single character.
+//
 #ifndef CASPER_LITERAL_H
 #define CASPER_LITERAL_H
 
@@ -5,8 +7,12 @@
 
 namespace casper {
 
+/*!
+ * A grammar that accepts only exactly one occurrance of the given character.
+ */
 template <char Ch> struct Literal {};
 
+/// Parse implementation for Literal.
 template <char Ch> class Parser<Literal<Ch>> {
 public:
   template <typename Range>
