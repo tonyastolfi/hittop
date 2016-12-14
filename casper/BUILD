@@ -2,9 +2,11 @@ cc_library(
     name = "casper",
     hdrs = [
         "concat.h",
+        "fallible.h",
         "literal.h",
         "parser.h",
     ],
+    copts = ["-std=c++14"],
     deps = [
         "@boost_1_62_0//:headers",
     ],
@@ -12,29 +14,17 @@ cc_library(
 )
 
 cc_test(
-    name = "concat-test",
-    srcs = ["concat-test.cc"],
-    copts = ["-Iexternal/gtest/include"],
-    deps = [
-        "@gtest//:main",
-        "//casper:casper",
+    name = "casper-test",
+    srcs = [
+        "concat-test.cc",
+        "fallible-test.cc",
+        "literal-test.cc",
+        "parser-test.cc"
     ],
-)
-
-cc_test(
-    name = "literal-test",
-    srcs = ["literal-test.cc"],
-    copts = ["-Iexternal/gtest/include"],
-    deps = [
-        "@gtest//:main",
-        "//casper:casper",
+    copts = [
+        "-Iexternal/gtest/include",
+        "-std=c++14",
     ],
-)
-
-cc_test(
-    name = "parser-test",
-    srcs = ["parser-test.cc"],
-    copts = ["-Iexternal/gtest/include"],
     deps = [
         "@gtest//:main",
         "//casper:casper",
