@@ -16,9 +16,28 @@ namespace casper {
  * successfully and then the second also parses successfully when run on the
  * unparsed input from the first.
  */
-template <typename First, typename Second> struct Concat {};
+template <typename... Parts> struct Concat {};
 
-/// Parse implementation for Concat.
+/// Parser for an empty sequence == Success
+template <> class Parser<Concat<>> {
+  template <typename Range>
+  auto operator()(const Range &input) const
+      -> Fallible<decltype(std::begin(input))> {
+    return std::begin(input);
+  }
+};
+
+using Success = Concat<>;
+
+/// Parser for a sequence of one thing is equivalent to just parsing the thing.
+template <typename First> class Parser<Concat<First>> : public Parser<First> {};
+
+/// General recursive case for Parser<Concat<...>>
+template <typename First, typename... Rest>
+class Parser<Concat<First, Rest...>>
+    : public Parser<Concat<First, Concat<Rest...>>> {};
+
+/// Concatenate two grammars; the substantive case of Parse<Concat<...>>.
 template <typename First, typename Second> class Parser<Concat<First, Second>> {
 public:
   template <typename Range>
