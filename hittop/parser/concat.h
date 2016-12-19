@@ -6,9 +6,10 @@
 #include <iterator>
 
 #include "boost/range/iterator_range_core.hpp"
-#include "casper/parser.h"
+#include "hittop/parser/parser.h"
 
-namespace casper {
+namespace hittop {
+namespace parser {
 
 /*!
  * The Concat operator takes two grammars and "glues" them together
@@ -54,6 +55,7 @@ public:
   }
 };
 
-} // namespace casper
+} // namespace parser
+} // namespace hittop
 
 #endif // CASPER_CONCAT_H
