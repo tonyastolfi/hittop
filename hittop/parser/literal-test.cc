@@ -33,16 +33,16 @@ TEST(ParseLiteral, BadChar) {
   EXPECT_EQ(result.get(), input.begin());
 }
 
-namespace parse_strs {
-DEFINE_PARSE_STR(abcd);
-DEFINE_PARSE_STR(abcdx);
-DEFINE_PARSE_STR(abcdefghi);
+namespace tokens {
+DEFINE_TOKEN(abcd);
+DEFINE_TOKEN(abcdx);
+DEFINE_TOKEN(abcdefghi);
 }
 
 TEST(ParseLiteral, String) {
-  EXPECT_EQ(4, parse_strs::abcd::size());
-  EXPECT_EQ(5, parse_strs::abcdx::size());
-  EXPECT_EQ(9, parse_strs::abcdefghi::size());
+  EXPECT_EQ(4, tokens::abcd::size());
+  EXPECT_EQ(5, tokens::abcdx::size());
+  EXPECT_EQ(9, tokens::abcdefghi::size());
 
   std::string input = "abcdef";
   {
@@ -51,17 +51,17 @@ TEST(ParseLiteral, String) {
     EXPECT_EQ(result.get(), input.begin() + 3);
   }
   {
-    auto result = Parse<parse_strs::abcd>(input);
+    auto result = Parse<tokens::abcd>(input);
     EXPECT_FALSE(result.error());
     EXPECT_EQ(result.get(), input.begin() + 4);
   }
   {
-    auto result = Parse<parse_strs::abcdefghi>(input);
+    auto result = Parse<tokens::abcdefghi>(input);
     EXPECT_EQ(result.error(), ParseError::INCOMPLETE);
     EXPECT_EQ(result.get(), input.end());
   }
   {
-    auto result = Parse<parse_strs::abcdx>(input);
+    auto result = Parse<tokens::abcdx>(input);
     EXPECT_EQ(result.error(), ParseError::BAD_CHAR);
     EXPECT_EQ(result.get(), input.begin() + 4);
   }

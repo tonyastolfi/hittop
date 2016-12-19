@@ -42,17 +42,6 @@ class Parser<Literal<First, Rest...>>
 
 template <typename Base> struct Token : Base {};
 
-#define DEFINE_TOKEN(name)                                                     \
-  struct name##_base_##__LINE__ {                                              \
-    static constexpr const char *get() { return #name; }                       \
-    template <::std::size_t N>                                                 \
-    static constexpr ::std::size_t size(const char (&s)[N]) {                  \
-      return N - 1;                                                            \
-    }                                                                          \
-    static constexpr ::std::size_t size() { return size(#name); }              \
-  };                                                                           \
-  using name = ::casper::Token<name##_base_##__LINE__>;
-
 template <typename T> class Parser<Token<T>> {
 public:
   template <typename Range>
@@ -76,5 +65,16 @@ public:
 
 } // namespace parser
 } // namespace hittop
+
+#define DEFINE_TOKEN(name)                                                     \
+  struct name##_base_##__LINE__ {                                              \
+    static constexpr const char *get() { return #name; }                       \
+    template <::std::size_t N>                                                 \
+    static constexpr ::std::size_t size(const char (&s)[N]) {                  \
+      return N - 1;                                                            \
+    }                                                                          \
+    static constexpr ::std::size_t size() { return size(#name); }              \
+  };                                                                           \
+  using name = ::hittop::parser::Token<name##_base_##__LINE__>;
 
 #endif // HITTOP_PARSER_LITERAL_H
