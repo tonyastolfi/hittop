@@ -1,7 +1,7 @@
 // Concat: Grammar operator that appends one grammar to another sequentially.
 //
-#ifndef CASPER_CONCAT_H
-#define CASPER_CONCAT_H
+#ifndef HITTOP_PARSER_CONCAT_H
+#define HITTOP_PARSER_CONCAT_H
 
 #include <iterator>
 
@@ -58,4 +58,4 @@ public:
 } // namespace parser
 } // namespace hittop
 
-#endif // CASPER_CONCAT_H
+#endif // HITTOP_PARSER_CONCAT_H
