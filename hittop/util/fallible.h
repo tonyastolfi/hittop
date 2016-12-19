@@ -1,9 +1,10 @@
-#ifndef CASPER_FALLIBLE_H
-#define CASPER_FALLIBLE_H
+#ifndef HITTOP_UTIL_FALLIBLE_H
+#define HITTOP_UTIL_FALLIBLE_H
 
 #include <system_error>
 
-namespace casper {
+namespace hittop {
+namespace util {
 
 /*!
  * An instance of 'T' along with a std::error_condition.
@@ -36,6 +37,7 @@ bool operator==(const Fallible<T> &lhs, const Fallible<U> &rhs) {
   return lhs.get() == rhs.get() && lhs.error() == rhs.error();
 }
 
-} // namespace casper
+} // namespace util
+} // namespace hittop
 
-#endif // CASPER_FALLIBLE_H
+#endif // HITTOP_UTIL_FALLIBLE_H

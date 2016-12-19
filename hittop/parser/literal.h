@@ -1,14 +1,15 @@
 // Basic grammar terminal that parses a single character.
 //
-#ifndef CASPER_LITERAL_H
-#define CASPER_LITERAL_H
+#ifndef HITTOP_PARSER_LITERAL_H
+#define HITTOP_PARSER_LITERAL_H
 
 #include <algorithm>
 
-#include "casper/concat.h"
-#include "casper/parser.h"
+#include "hittop/parser/concat.h"
+#include "hittop/parser/parser.h"
 
-namespace casper {
+namespace hittop {
+namespace parser {
 
 /*!
  * A grammar that accepts only exactly one occurrance of the given character.
@@ -41,17 +42,6 @@ class Parser<Literal<First, Rest...>>
 
 template <typename Base> struct Token : Base {};
 
-#define DEFINE_TOKEN(name)                                                     \
-  struct name##_base_##__LINE__ {                                              \
-    static constexpr const char *get() { return #name; }                       \
-    template <::std::size_t N>                                                 \
-    static constexpr ::std::size_t size(const char (&s)[N]) {                  \
-      return N - 1;                                                            \
-    }                                                                          \
-    static constexpr ::std::size_t size() { return size(#name); }              \
-  };                                                                           \
-  using name = ::casper::Token<name##_base_##__LINE__>;
-
 template <typename T> class Parser<Token<T>> {
 public:
   template <typename Range>
@@ -73,6 +63,18 @@ public:
   }
 };
 
-} // namespace casper
+} // namespace parser
+} // namespace hittop
 
-#endif // CASPER_LITERAL_H
+#define DEFINE_TOKEN(name)                                                     \
+  struct name##_base_##__LINE__ {                                              \
+    static constexpr const char *get() { return #name; }                       \
+    template <::std::size_t N>                                                 \
+    static constexpr ::std::size_t size(const char (&s)[N]) {                  \
+      return N - 1;                                                            \
+    }                                                                          \
+    static constexpr ::std::size_t size() { return size(#name); }              \
+  };                                                                           \
+  using name = ::hittop::parser::Token<name##_base_##__LINE__>;
+
+#endif // HITTOP_PARSER_LITERAL_H

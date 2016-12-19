@@ -1,20 +1,14 @@
-// Defines the generic Parser interface for the Casper parser generator library.
+// Definition of ParserError -- canonical errors for the HiTToP parser library
+// and support for std::error_condition.
 //
-#ifndef CASPER_PARSER_H
-#define CASPER_PARSER_H
+#ifndef HITTOP_PARSER_PARSE_ERROR_H
+#define HITTOP_PARSER_PARSE_ERROR_H
 
 #include <string>
 #include <system_error>
-#include <type_traits>
 
-#include "casper/fallible.h"
-
-namespace casper {
-
-/// The form of a Parser class.  There is no generic implementation of Parser,
-/// only partial and full specializations that define how to parse specific
-/// grammars.
-template <typename Grammar> class Parser;
+namespace hittop {
+namespace parser {
 
 /// Enumerates the canonical error space for parse results.
 enum struct ParseError : int {
@@ -74,27 +68,17 @@ inline std::error_code make_error_code(const ParseError e) {
                          ParseErrorCategory::get_instance()};
 }
 
-/// Convenience wrapper around defining a new Parser object and invoking it on
-/// the given input range.  Allows the invocation operator defined on
-/// Parser<Grammer> to be non-const, as the parser instance created within this
-/// function is itself non-const.
-template <typename Grammar, typename Range>
-auto Parse(const Range &input)
-    -> decltype(std::declval<Parser<Grammar>>()(input)) {
-  Parser<Grammar> parser;
-  return parser(input);
-}
-
-} // namespace casper
+} // namespace parser
+} // namespace hittop
 
 // Tell the std:: library that ParseError can be converted implicitly to
 // error_condition.
 //
 namespace std {
 template <>
-struct is_error_condition_enum<casper::ParseError>
+struct is_error_condition_enum<::hittop::parser::ParseError>
     : std::integral_constant<bool, true> {};
 
 } // namespace std
 
-#endif // CASPER_PARSER_H
+#endif // HITTOP_PARSER_PARSE_ERROR_H

@@ -1,9 +1,10 @@
-#ifndef CASPER_REPEAT_H
-#define CASPER_REPEAT_H
+#ifndef HITTOP_PARSER_REPEAT_H
+#define HITTOP_PARSER_REPEAT_H
 
 #include "boost/range/iterator_range_core.hpp"
 
-namespace casper {
+namespace hittop {
+namespace parser {
 
 template <typename Grammar, unsigned Min = 0,
           unsigned Max = std::numeric_limits<unsigned>::max()>
@@ -40,6 +41,7 @@ public:
   }
 };
 
-} // namespace casper
+} // namespace parser
+} // namespace hittop
 
-#endif // CASPER_REPEAT_H
+#endif // HITTOP_PARSER_REPEAT_H

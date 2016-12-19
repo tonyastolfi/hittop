@@ -1,12 +1,13 @@
-#include "casper/literal.h"
+#include "hittop/parser/literal.h"
+
 #include "gtest/gtest.h"
 
 #include <iterator>
 #include <typeinfo>
 
-using casper::Literal;
-using casper::Parse;
-using casper::ParseError;
+using hittop::parser::Literal;
+using hittop::parser::Parse;
+using hittop::parser::ParseError;
 
 using a_grammar = Literal<'a'>;
 using abc_grammar = Literal<'a', 'b', 'c'>;

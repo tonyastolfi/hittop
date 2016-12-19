@@ -1,12 +1,12 @@
-#include "casper/parser.h"
+#include "hittop/parser/parser.h"
 
 #include <memory>
 #include <utility>
 
 #include "gtest/gtest.h"
 
-using casper::Fallible;
-using casper::ParseError;
+using hittop::parser::Fallible;
+using hittop::parser::ParseError;
 
 TEST(ParserErrorTest, Ctor) {
   std::error_condition c{ParseError::BAD_CHAR};

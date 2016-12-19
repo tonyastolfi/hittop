@@ -1,17 +1,17 @@
-#include "casper/concat.h"
+#include "hittop/parser/concat.h"
 
 #include <string>
 
 #include "boost/range/as_literal.hpp"
-#include "casper/literal.h"
-#include "casper/parser.h"
+#include "hittop/parser/literal.h"
+#include "hittop/parser/parser.h"
 #include "gtest/gtest.h"
 
 using boost::as_literal;
-using casper::Concat;
-using casper::Literal;
-using casper::Parse;
-using casper::ParseError;
+using hittop::parser::Concat;
+using hittop::parser::Literal;
+using hittop::parser::Parse;
+using hittop::parser::ParseError;
 
 using ab_grammar = Concat<Literal<'a'>, Literal<'b'>>;
 

@@ -1,25 +1,25 @@
 cc_library(
-    name = "casper",
+    name = "parser",
     hdrs = [
         "concat.h",
-        "fallible.h",
         "literal.h",
+        "parse_error.h",
         "parser.h",
+        "repeat.h",
     ],
     copts = ["-std=c++14"],
     deps = [
         "@boost_1_62_0//:headers",
     ],
-    visibility = ["//main:__pkg__"]
+    visibility = ["//visibility:public"]
 )
 
 cc_test(
-    name = "casper-test",
+    name = "parser-test",
     srcs = [
         "concat-test.cc",
-        "fallible-test.cc",
         "literal-test.cc",
-        "parser-test.cc"
+        "parse_error-test.cc"
     ],
     copts = [
         "-Iexternal/gtest/include",
@@ -27,6 +27,7 @@ cc_test(
     ],
     deps = [
         "@gtest//:main",
-        "//casper:casper",
+        ":parser",
+        "//hittop/util",
     ],
 )
