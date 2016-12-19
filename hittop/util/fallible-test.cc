@@ -1,13 +1,13 @@
-#include "casper/fallible.h"
+#include "hittop/util/fallible.h"
 
 #include <memory>
 #include <utility>
 
 #include "gtest/gtest.h"
-#include "casper/parser.h"
+#include "hittop/parser/parse_error.h"
 
-using casper::Fallible;
-using casper::ParseError;
+using hittop::util::Fallible;
+using hittop::parser::ParseError;
 
 TEST(Fallible, DefaultCtor) {
   Fallible<int> r;

@@ -1,14 +1,15 @@
 // Basic grammar terminal that parses a single character.
 //
-#ifndef CASPER_LITERAL_H
-#define CASPER_LITERAL_H
+#ifndef HITTOP_PARSER_LITERAL_H
+#define HITTOP_PARSER_LITERAL_H
 
 #include <algorithm>
 
-#include "casper/concat.h"
-#include "casper/parser.h"
+#include "hittop/parser/concat.h"
+#include "hittop/parser/parser.h"
 
-namespace casper {
+namespace hittop {
+namespace parser {
 
 /*!
  * A grammar that accepts only exactly one occurrance of the given character.
@@ -73,6 +74,7 @@ public:
   }
 };
 
-} // namespace casper
+} // namespace parser
+} // namespace hittop
 
-#endif // CASPER_LITERAL_H
+#endif // HITTOP_PARSER_LITERAL_H
