@@ -29,13 +29,13 @@ const char kMultiPart[] = "abababababa";}
 const char kMultiPartDone[] = "abababababax";
  // namespace
 
-TEST(ParseRepeat, OkPrefix) {
+TEST(ParseRepeat, OkSingle) {
   auto result = Parse<Repeat<ab_grammar>>(as_literal(kGood));
   EXPECT_FALSE(result.error());
   EXPECT_EQ(result.get(), &kGood[2]);
 }
 
-TEST(ParseRepeat, OkFull) {
+TEST(ParseRepeat, IncompleteSingle) {
   auto result = Parse<Repeat<ab_grammar>>(as_literal(kExact));
   // In this case, even though we consume exactly the input, we expect the
   //  parser to return INCOMPLETE because, who knows, maybe what follows is
@@ -50,13 +50,13 @@ TEST(ParseRepeat, IncompleteEmptyInput) {
   EXPECT_EQ(result.get(), &kEmpty[0]);
 }
 
-TEST(ParseRepeat, IncompleteFirstConsumesAll) {
+TEST(ParseRepeat, IncompleteZero) {
   auto result = Parse<Repeat<ab_grammar>>(as_literal(kPartial));
   EXPECT_EQ(result.error(), ParseError::INCOMPLETE);
   EXPECT_EQ(result.get(), &kPartial[1]);
 }
 
-TEST(ParseRepeat, BadCharFirst) {
+TEST(ParseRepeat, OkZeroErrorOnFirstChar) {
   auto result = Parse<Repeat<ab_grammar>>(as_literal(kBad0));
   // Failure to parse a single instance of the repeated grammar is considered
   //  success.
@@ -64,21 +64,21 @@ TEST(ParseRepeat, BadCharFirst) {
   EXPECT_EQ(result.get(), &kBad0[0]);
 }
 
-TEST(ParseRepeat, BadCharSecond) {
+TEST(ParseRepeat, OkZeroErrorOnSecondChar) {
   auto result = Parse<Repeat<ab_grammar>>(as_literal(kBad1));
   // Repeat never fails other than INCOMPLETE.
   EXPECT_FALSE(result.error());
   EXPECT_EQ(result.get(), &kBad1[0]);
 }
 
-TEST(ParseRepeat, MoreThan2Parts) {
+TEST(ParseRepeat, IncompleteMany) {
   auto result =
       Parse<Repeat<ab_grammar>>(as_literal(kMultiPart));
   EXPECT_EQ(result.error(), ParseError::INCOMPLETE);
   EXPECT_EQ(result.get(), &kMultiPart[11]);
 }
 
-TEST(ParseRepeat, MoreThan2PartsDone) {
+TEST(ParseRepeat, OkMany) {
   auto result =
       Parse<Repeat<ab_grammar>>(as_literal(kMultiPartDone));
   EXPECT_FALSE(result.error());
