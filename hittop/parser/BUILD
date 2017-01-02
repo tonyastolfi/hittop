@@ -19,7 +19,8 @@ cc_test(
     srcs = [
         "concat-test.cc",
         "literal-test.cc",
-        "parse_error-test.cc"
+        "parse_error-test.cc",
+        "repeat-test.cc",
     ],
     copts = [
         "-Iexternal/gtest/include",

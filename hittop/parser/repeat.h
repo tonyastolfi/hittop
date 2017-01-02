@@ -3,35 +3,39 @@
 
 #include "boost/range/iterator_range_core.hpp"
 
+#include "hittop/parser/parser.h"
+
 namespace hittop {
 namespace parser {
 
-template <typename Grammar, unsigned Min = 0,
-          unsigned Max = std::numeric_limits<unsigned>::max()>
+// Star operator; repeat the specified grammar greedily as many times as
+// possible.  Will always succeed (because parsing 0 times is a valid result)
+// or ask for more input, but is not guaranteed to make progress.
+template <typename Grammar>
 struct Repeat {};
 
-template <typename T> using Opt = Repeat<T, 0, 1>;
-
-template <typename Grammar, unsigned Min, unsigned Max>
-class Parser<Repeat<Grammar, Min, Max>> {
+template <typename Grammar>
+class Parser<Repeat<Grammar>> {
 public:
   template <typename Range>
   auto operator()(const Range &input) const
       -> Fallible<decltype(std::begin(input))> {
     const auto last = std::end(input);
     auto next = std::begin(input);
-    for (unsigned count = 0; count < Max; ++count) {
+    for (;;) {
       auto result = Parse<Grammar>(boost::make_iterator_range(next, last));
       if (result.error()) {
-        if (count >= Min) {
-          break;
-        } else {
+        // INCOMPLETE is a special case; we always want to pass it through since
+        //  it is uncertain whether the parse would have been successful on this
+        //  iteration.
+        if (result.error() == ParseError::INCOMPLETE) {
           return result;
         }
+        break;
       }
       // If we are going to make no progress by running another time
       //  through the loop (we assume Parser implementations are
-      //  stateless).
+      //  stateless), then stop here.
       if (next == result.get()) {
         break;
       }
