@@ -7,7 +7,8 @@ new_http_archive(
 )
 
 new_local_repository(
-    name = "boost_1_62_0",
+    # Set this to the location of your boost installation.
     path = "/Users/astolfi/projects/boost_1_62_0",
+    name = "boost_1_62_0",
     build_file = "boost.BUILD",
 )
