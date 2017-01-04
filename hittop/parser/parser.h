@@ -3,6 +3,8 @@
 #ifndef HITTOP_PARSER_PARSER_H
 #define HITTOP_PARSER_PARSER_H
 
+#include "boost/range/as_literal.hpp"
+
 #include "hittop/parser/parse_error.h"
 
 #include "hittop/util/fallible.h"
@@ -26,6 +28,13 @@ auto Parse(const Range &input)
     -> decltype(std::declval<Parser<Grammar>>()(input)) {
   Parser<Grammar> parser;
   return parser(input);
+}
+
+/// Convenience function that parsers a C string as a literal character range.
+template <typename Grammar>
+auto Parse(const char *input)
+    -> decltype(Parse<Grammar>(boost::as_literal(input))) {
+  return Parse<Grammar>(boost::as_literal(input));
 }
 
 } // namespace parser
