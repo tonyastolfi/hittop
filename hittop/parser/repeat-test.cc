@@ -3,11 +3,13 @@
 #include <string>
 
 #include "boost/range/as_literal.hpp"
+
+#include "gtest/gtest.h"
+
 #include "hittop/parser/concat.h"
 #include "hittop/parser/literal.h"
 #include "hittop/parser/repeat.h"
 #include "hittop/parser/parser.h"
-#include "gtest/gtest.h"
 
 using boost::as_literal;
 using hittop::parser::Concat;
