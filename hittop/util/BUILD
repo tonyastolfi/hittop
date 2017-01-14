@@ -39,7 +39,10 @@ cc_library(
     srcs = [
         "test_data.cc",
     ],
-    copts = ["-std=c++14"],
+    copts = [
+        "-Iexternal/gtest/include",
+        "-std=c++14"
+    ],
     deps = [
         ":util",
         "@gtest//:main",

@@ -10,12 +10,11 @@ Fallible<std::string> LoadFileAsString(const char *path) {
   std::ostringstream oss;
   try {
     std::ifstream ifs;
-    const std::ios_base::iostate mask = ifs.exceptions() | std::ios::failbit;
-    f.exceptions(mask);
-    ifs.open(fileName);
+    ifs.exceptions(ifs.exceptions() | std::ios::failbit);
+    ifs.open(path);
     oss << ifs.rdbuf();
   } catch (std::system_error &e) {
-    return {"", e.code()};
+    return {"", e.code().default_error_condition()};
   }
   return oss.str();
 }
