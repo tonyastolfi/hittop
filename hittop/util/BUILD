@@ -2,6 +2,7 @@ cc_library(
     name = "util",
     hdrs = [
         "fallible.h",
+        "scope_exit.h",
     ],
     copts = ["-std=c++14"],
     deps = [

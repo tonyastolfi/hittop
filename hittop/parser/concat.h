@@ -6,7 +6,9 @@
 #include <iterator>
 
 #include "boost/range/iterator_range_core.hpp"
+
 #include "hittop/parser/parser.h"
+#include "hittop/parser/success.h"
 
 namespace hittop {
 namespace parser {
@@ -20,15 +22,7 @@ namespace parser {
 template <typename... Parts> struct Concat {};
 
 /// Parser for an empty sequence == Success
-template <> class Parser<Concat<>> {
-  template <typename Range>
-  auto operator()(const Range &input) const
-      -> Fallible<decltype(std::begin(input))> {
-    return std::begin(input);
-  }
-};
-
-using Success = Concat<>;
+template <> class Parser<Concat<>> : public Parser<Success> {};
 
 /// Parser for a sequence of one thing is equivalent to just parsing the thing.
 template <typename First> class Parser<Concat<First>> : public Parser<First> {};

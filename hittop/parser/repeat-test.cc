@@ -1,13 +1,15 @@
-#include "hittop/parser/concat.h"
+#include "hittop/parser/repeat.h"
+#include "hittop/parser/repeat.h"
 
 #include <string>
 
 #include "boost/range/as_literal.hpp"
+
+#include "gtest/gtest.h"
+
 #include "hittop/parser/concat.h"
 #include "hittop/parser/literal.h"
-#include "hittop/parser/repeat.h"
 #include "hittop/parser/parser.h"
-#include "gtest/gtest.h"
 
 using boost::as_literal;
 using hittop::parser::Concat;
@@ -25,9 +27,9 @@ const char kPartial[] = "a";
 const char kEmpty[] = "";
 const char kBad0[] = "xabc";
 const char kBad1[] = "axbc";
-const char kMultiPart[] = "abababababa";}
+const char kMultiPart[] = "abababababa";
 const char kMultiPartDone[] = "abababababax";
- // namespace
+} // namespace
 
 TEST(ParseRepeat, OkSingle) {
   auto result = Parse<Repeat<ab_grammar>>(as_literal(kGood));
@@ -72,15 +74,13 @@ TEST(ParseRepeat, OkZeroErrorOnSecondChar) {
 }
 
 TEST(ParseRepeat, IncompleteMany) {
-  auto result =
-      Parse<Repeat<ab_grammar>>(as_literal(kMultiPart));
+  auto result = Parse<Repeat<ab_grammar>>(as_literal(kMultiPart));
   EXPECT_EQ(result.error(), ParseError::INCOMPLETE);
   EXPECT_EQ(result.get(), &kMultiPart[11]);
 }
 
 TEST(ParseRepeat, OkMany) {
-  auto result =
-      Parse<Repeat<ab_grammar>>(as_literal(kMultiPartDone));
+  auto result = Parse<Repeat<ab_grammar>>(as_literal(kMultiPartDone));
   EXPECT_FALSE(result.error());
   EXPECT_EQ(result.get(), &kMultiPartDone[10]);
 }

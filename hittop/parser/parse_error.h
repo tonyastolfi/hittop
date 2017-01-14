@@ -22,6 +22,10 @@ enum struct ParseError : int {
   // character.
   BAD_CHAR,
 
+  // For conditional grammar combinators such as Unless, this indicates the
+  // condition parser failed.
+  FAILED_CONDITION,
+
   // Some other error occurred.
   UNKNOWN
 };
@@ -49,6 +53,8 @@ public:
       return "incomplete";
     case ParseError::BAD_CHAR:
       return "unexpected character";
+    case ParseError::FAILED_CONDITION:
+      return "exceptional case encountered";
     case ParseError::UNKNOWN:
       return "unknown error";
     }
