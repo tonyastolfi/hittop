@@ -15,7 +15,8 @@ template <typename... Grammars> struct Either {};
 template <> class Parser<Either<>> : public Parser<Success> {};
 
 // Singleton disjunction is equivalent to the single grammar.
-template <typename Grammar> class Parser<Either<Grammar>> {};
+template <typename Grammar>
+class Parser<Either<Grammar>> : public Parser<Grammar> {};
 
 // Two alternatives; this is the interesting base case that does most of the
 //  work here.
