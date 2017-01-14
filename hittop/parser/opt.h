@@ -16,7 +16,8 @@ template <typename T> struct Opt {};
 
 // Optionally parsing a T is the same as either parsing it or just succeeding
 // without consuming any input.
-template <typename T> class Parser<Opt<T>> : public Either<T, Success> {};
+template <typename T>
+class Parser<Opt<T>> : public Parser<Either<T, Success>> {};
 
 } // namespace parser
 } // namespace hittop
