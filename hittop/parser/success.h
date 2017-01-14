@@ -14,6 +14,7 @@ struct Success {};
 
 // Always succeed, consuming no input.
 template <> class Parser<Success> {
+public:
   template <typename Range>
   auto operator()(const Range &input) const
       -> Fallible<decltype(std::begin(input))> {
