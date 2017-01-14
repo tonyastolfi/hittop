@@ -11,7 +11,10 @@
 #include <sstream>
 #include <string>
 
+#include "hittop/util/test_data.h"
+
 using hittop::parser::Parse;
+using hittop::util::LoadTestData;
 namespace json = hittop::parser::json_org;
 
 TEST(ParseJson, OkBooleanTrue) {
@@ -36,23 +39,7 @@ TEST(ParseJson, OkBooleanWithSpace) {
 }
 
 TEST(ParseJson, OkTestDataFile) {
-  const char *const TEST_SRCDIR = std::getenv("TEST_SRCDIR");
-  ASSERT_TRUE(TEST_SRCDIR);
-
-  const char *const TEST_WORKSPACE = std::getenv("TEST_WORKSPACE");
-  ASSERT_TRUE(TEST_SRCDIR);
-
-  const std::string path = std::string(TEST_SRCDIR) + "/" + TEST_WORKSPACE +
-                           "/hittop/parser/json_org-test-data.json";
-  std::clog << path << std::endl;
-
-  std::ostringstream oss;
-  {
-    std::ifstream ifs(path);
-    ASSERT_TRUE(ifs.good());
-    oss << ifs.rdbuf();
-  }
-  const std::string input = oss.str();
+  auto input = LoadTestData("/hittop/parser/json_org-test-data.json");
   auto result = Parse<json::Value>(input);
   EXPECT_FALSE(result.error()) << "Actual error: " << result.error().message();
   EXPECT_EQ(result.get(), input.end());

@@ -79,6 +79,7 @@ cc_test(
     deps = [
         "@gtest//:main",
         ":parser",
-        "//hittop/util",
-    ],
+        "//hittop/util:util",
+        "//hittop/util:test_util",
+   ],
 )
