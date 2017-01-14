@@ -12,7 +12,7 @@
 namespace hittop {
 namespace parser {
 
-template <typename Item, typename Delimiter> struct Inter;
+template <typename Item, typename Delimiter> struct Inter {};
 
 // Define interpolation as: [Item *(Delimiter Item)]
 template <typename Item, typename Delimiter>

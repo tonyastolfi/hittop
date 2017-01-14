@@ -10,7 +10,7 @@
 namespace hittop {
 namespace parser {
 
-template <unsigned Count, typename Grammar> struct Exactly;
+template <unsigned Count, typename Grammar> struct Exactly {};
 
 template <typename Grammar>
 class Parser<Exactly<0, Grammar>> : public Parser<Success> {};

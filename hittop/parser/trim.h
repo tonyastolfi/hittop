@@ -17,11 +17,11 @@ namespace parser {
 template <typename Grammar> struct Trim {};
 
 template <typename Grammar>
-class Parser<Trim<Grammar>>                     //
-    : public Parser<                            //
-          Concat<                               //
-              Repeat<CharFilter<std::isspace>>, //
-              Grammar,                          //
+class Parser<Trim<Grammar>>                            //
+    : public Parser<                                   //
+          Concat<                                      //
+              Force<Repeat<CharFilter<std::isspace>>>, //
+              Grammar,                                 //
               Force<Repeat<CharFilter<std::isspace>>>>> {};
 
 } // namespace parser

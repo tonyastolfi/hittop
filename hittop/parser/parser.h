@@ -30,7 +30,7 @@ auto Parse(const Range &input)
   return parser(input);
 }
 
-/// Convenience function that parsers a C string as a literal character range.
+/// Convenience function that parses a C string as a literal character range.
 template <typename Grammar>
 auto Parse(const char *input)
     -> decltype(Parse<Grammar>(boost::as_literal(input))) {
