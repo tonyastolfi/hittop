@@ -50,3 +50,32 @@ cc_library(
     ],
     visibility = ["//visibility:public"]
 )
+
+cc_library(
+    name = "tuples",
+    hdrs = [
+        "tuples.h",
+    ],
+    copts = [
+        "-std=c++14"
+    ],
+    deps = [
+        "@boost_1_62_0//:headers",
+    ],
+    visibility = ["//visibility:public"]
+)
+
+cc_test(
+    name = "tuples-test",
+    srcs = [
+        "tuples-test.cc",
+    ],
+    copts = [
+        "-Iexternal/gtest/include",
+        "-std=c++14",
+    ],
+    deps = [
+        "@gtest//:main",
+        ":tuples",
+    ],
+)
