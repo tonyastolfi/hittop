@@ -14,7 +14,7 @@ template <template <typename> class Predicate, typename First, typename... Rest>
 struct FindFirst<Predicate, std::tuple<First, Rest...>> {
   using type = typename std::conditional<
       Predicate<First>::type::value, First,
-      FindFirst<Predicate, std::tuple<Rest...>>>::type;
+      FindFirst<Predicate, std::tuple<Rest...>>::type>::type;
 };
 
 struct NotFound {};
