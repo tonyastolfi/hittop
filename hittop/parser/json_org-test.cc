@@ -96,7 +96,7 @@ struct JsonValueVisitor {
 
   template <typename F> void operator()(json::Array, F &&get_result) {
     std::vector<JsonValue> items;
-    auto result = get_result([&v](json::Value, auto get_item_result) {
+    auto result = get_result([&items](json::Value, auto get_item_result) {
       JsonValueVisitor item_visitor;
       auto item_result = get_item_result(item_visitor);
       if (!item_result.error()) {

@@ -79,3 +79,32 @@ cc_test(
         ":tuples",
     ],
 )
+
+cc_library(
+    name = "functional",
+    hdrs = [
+        "is_callable.h",
+    ],
+    copts = [
+        "-std=c++14"
+    ],
+    deps = [
+        "@boost_1_62_0//:headers",
+    ],
+    visibility = ["//visibility:public"]
+)
+
+cc_test(
+    name = "functional-test",
+    srcs = [
+        "is_callable-test.cc",
+    ],
+    copts = [
+        "-Iexternal/gtest/include",
+        "-std=c++14",
+    ],
+    deps = [
+        "@gtest//:main",
+        ":functional",
+    ],
+)
