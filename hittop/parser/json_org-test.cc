@@ -62,28 +62,28 @@ inline std::string JsonUnescapeUnsafe(const Range &in) {
       ++next;
       switch (*next) {
       case '"':
-        oss << char('"');
+        out << char('"');
         break;
       case '\\':
-        oss << char('\\');
+        out << char('\\');
         break;
       case '/':
-        oss << char('/');
+        out << char('/');
         break;
       case 'b':
-        oss << char('\b');
+        out << char('\b');
         break;
       case 'f':
-        oss << char('\f');
+        out << char('\f');
         break;
       case 'n':
-        oss << char('\n');
+        out << char('\n');
         break;
       case 'r':
-        oss << char('\r');
+        out << char('\r');
         break;
       case 't':
-        oss << char('\t');
+        out << char('\t');
         break;
       default:
         // TODO!!!
