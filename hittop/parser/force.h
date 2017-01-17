@@ -12,11 +12,11 @@ template <typename Grammar> struct Force {};
 
 template <typename Grammar> class Parser<Force<Grammar>> {
 public:
-  template <typename Range>
-  auto operator()(const Range &input) const
+  template <typename Range, typename... Args>
+  auto operator()(const Range &input, Args &&... args) const
       -> Fallible<decltype(std::begin(input))> {
     // Eat the error_condition of the parse result, forcing success.
-    return Parse<Grammar>(input).consume();
+    return Parse<Grammar>(input, std::forward<Args>(args)...).consume();
   }
 };
 

@@ -14,8 +14,8 @@ struct AnyChar {};
 
 template <> class Parser<AnyChar> {
 public:
-  template <typename Range>
-  auto operator()(const Range &input) const
+  template <typename Range, typename... Args>
+  auto operator()(const Range &input, Args &&...) const
       -> Fallible<decltype(std::begin(input))> {
     auto first = std::begin(input);
     if (first == std::end(input)) {

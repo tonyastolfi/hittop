@@ -36,24 +36,26 @@ struct Value_;
 
 using Value = ForwardRef<Value_>;
 
-using String =                                                              //
-    Trim<                                                                   //
-        Concat<                                                             //
-            Literal<'"'>,                                                   //
-            Repeat<Either<                                                  //
-                Unless<Either<Literal<'"'>, Literal<'\\'>, control_char>,   //
-                       AnyChar>,                                            //
-                Concat<Literal<'\\'>,                                       //
-                       Either<                                              //
-                           Literal<'"'>,                                    //
-                           Literal<'\\'>,                                   //
-                           Literal<'/'>,                                    //
-                           Literal<'b'>,                                    //
-                           Literal<'f'>,                                    //
-                           Literal<'n'>,                                    //
-                           Literal<'r'>,                                    //
-                           Literal<'t'>,                                    //
-                           Concat<Literal<'u'>, Exactly<4, hex_digit>>>>>>, //
+using StringContents = Repeat<Either<                         //
+    Unless<Either<Literal<'"'>, Literal<'\\'>, control_char>, //
+           AnyChar>,                                          //
+    Concat<Literal<'\\'>,                                     //
+           Either<                                            //
+               Literal<'"'>,                                  //
+               Literal<'\\'>,                                 //
+               Literal<'/'>,                                  //
+               Literal<'b'>,                                  //
+               Literal<'f'>,                                  //
+               Literal<'n'>,                                  //
+               Literal<'r'>,                                  //
+               Literal<'t'>,                                  //
+               Concat<Literal<'u'>, Exactly<4, hex_digit>>>>>>;
+
+using String =              //
+    Trim<                   //
+        Concat<             //
+            Literal<'"'>,   //
+            StringContents, //
             Literal<'"'>>>;
 
 using Number =                                               //
@@ -77,6 +79,8 @@ DEFINE_NAMED_TOKEN(False, "false");
 DEFINE_NAMED_TOKEN(Null, "null");
 
 } // namespace token
+
+using Null = tokens::Null;
 
 using Property = Concat<Trim<String>, Literal<':'>, Trim<Value>>;
 
@@ -103,7 +107,7 @@ struct Value_ {
       Object,          //
       Array,           //
       Boolean,         //
-      tokens::Null>;
+      Null>;
 };
 
 } // namespace parser

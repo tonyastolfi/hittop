@@ -83,12 +83,14 @@ cc_test(
 cc_library(
     name = "functional",
     hdrs = [
+        "first_match.h",
         "is_callable.h",
     ],
     copts = [
         "-std=c++14"
     ],
     deps = [
+        ":tuples",
         "@boost_1_62_0//:headers",
     ],
     visibility = ["//visibility:public"]
