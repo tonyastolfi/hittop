@@ -3,6 +3,7 @@ cc_library(
     hdrs = [
         "fallible.h",
         "load_file_as_string.h",
+        "range_to_string.h",
         "scope_exit.h",
     ],
     srcs = [

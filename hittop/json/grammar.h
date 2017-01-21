@@ -1,7 +1,7 @@
 // Translation of the JavaScript Object Notation grammar from http://json.org.
 //
-#ifndef HITTOP_PARSER_JSON_ORG_H
-#define HITTOP_PARSER_JSON_ORG_H
+#ifndef HITTOP_JSON_GRAMMAR_H
+#define HITTOP_JSON_GRAMMAR_H
 
 #include <cctype>
 
@@ -21,8 +21,8 @@
 #include "hittop/parser/unless.h"
 
 namespace hittop {
-namespace parser {
-namespace json_org {
+namespace json {
+namespace grammar {
 
 using digit = CharFilter<std::isdigit>;
 
@@ -110,8 +110,8 @@ struct Value_ {
       Null>;
 };
 
-} // namespace parser
-} // namespace parser
+} // grammar
+} // namespace json
 } // namespace hittop
 
-#endif // HITTOP_PARSER_JSON_ORG_H
+#endif // HITTOP_JSON_GRAMMAR_H
