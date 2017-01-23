@@ -13,7 +13,6 @@ cc_library(
         "forward_ref.h",
         "force.h",
         "inter.h",
-        "json_org.h",
         "literal.h",
         "opt.h",
         "parse_error.h",
@@ -66,25 +65,4 @@ cc_test(
         ":parser",
         "//hittop/util",
     ],
-)
-
-cc_test(
-    name = "json_org-test",
-    srcs = [
-        "json_org-test.cc",
-    ],
-    data = [
-        ":json_org-test-data.json"
-    ],
-    copts = [
-        "-Iexternal/gtest/include",
-        "-std=c++14",
-    ],
-    deps = [
-        "@gtest//:main",
-        ":parser",
-        "//hittop/util:functional",
-        "//hittop/util:util",
-        "//hittop/util:test_util",
-   ],
 )

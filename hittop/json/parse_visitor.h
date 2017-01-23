@@ -1,6 +1,11 @@
 #ifndef HITTOP_JSON_PARSE_VISITOR_H
 #define HITTOP_JSON_PARSE_VISITOR_H
 
+#include <iterator>
+#include <sstream>
+#include <string>
+
+#include "hittop/util/first_match.h"
 #include "hittop/util/range_to_string.h"
 
 #include "hittop/json/grammar.h"
@@ -11,6 +16,11 @@ namespace json {
 
 namespace internal {
 
+/* Returns the given character range as a string with all JSON escaped chars
+ * replaced by their UTF-8 equivalent.  This function is unsafe to call on
+ * ranges that are not valid JSON string content sequences (e.g., it does not
+ * make sure that the character after a '\' is inside the range).
+ */
 template <typename Range> inline std::string UnescapeUnsafe(const Range &in) {
   std::ostringstream out;
   auto next = std::begin(in);
@@ -72,7 +82,7 @@ public:
   void operator()(grammar::StringContents, F &&run_parser) const {
     auto result = run_parser();
     if (!result.error()) {
-      **output_ = internal::UnescapeUnsafe(result.get());
+      *output_ = internal::UnescapeUnsafe(result.get());
     }
   }
 
@@ -80,21 +90,21 @@ public:
   void operator()(grammar::Boolean, F &&run_parser) const {
     auto result = run_parser();
     if (!result.error()) {
-      **output_ = Boolean{*std::begin(result.get()) == 't'};
+      *output_ = Boolean{*std::begin(result.get()) == 't'};
     }
   }
 
   template <typename F> void operator()(grammar::Number, F &&run_parser) const {
     auto result = run_parser();
     if (!result.error()) {
-      **output_ = std::stod(util::RangeToString(result.get()));
+      *output_ = std::stod(util::RangeToString(result.get()));
     }
   }
 
   template <typename F> void operator()(grammar::Null, F &&run_parser) const {
     auto result = run_parser();
     if (!result.error()) {
-      **output_ = Null{};
+      *output_ = Null{};
     }
   }
 
@@ -109,12 +119,12 @@ public:
       }
     });
     if (!result.error()) {
-      **output_ = std::move(items);
+      *output_ = std::move(items);
     }
   }
 
   template <typename F> void operator()(grammar::Object, F &&run_parser) const {
-    std::unordered_map<std::string, Value> object;
+    Object object;
     auto result =
         run_parser([&object](grammar::Property, auto get_property_result) {
           std::string name;
@@ -136,7 +146,7 @@ public:
               }));
         });
     if (!result.error()) {
-      **output_ = std::move(object);
+      *output_ = std::move(object);
     }
   }
 };

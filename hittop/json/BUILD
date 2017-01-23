@@ -2,6 +2,7 @@ cc_library(
     name = "json",
     hdrs = [
         "grammar.h",
+        "parse_visitor.h",
         "parser.h",
         "types.h",
     ],
@@ -18,7 +19,11 @@ cc_library(
 cc_test(
     name = "json-test",
     srcs = [
+        "parser-test.cc",
         "types-test.cc",
+    ],
+    data = [
+        ":test-data.json"
     ],
     copts = [
         "-Iexternal/gtest/include",
@@ -27,5 +32,6 @@ cc_test(
     deps = [
         "@gtest//:main",
         ":json",
+        "//hittop/util:test_util"
     ],
 )

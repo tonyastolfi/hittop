@@ -24,6 +24,8 @@ namespace hittop {
 namespace json {
 namespace grammar {
 
+using namespace ::hittop::parser;
+
 using digit = CharFilter<std::isdigit>;
 
 using digit_1_9 = Unless<Literal<'0'>, digit>;

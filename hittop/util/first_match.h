@@ -1,6 +1,7 @@
 #ifndef HITTOP_UTIL_FIRST_MATCH_H
 #define HITTOP_UTIL_FIRST_MATCH_H
 
+#include "hittop/util/is_callable.h"
 #include "hittop/util/tuples.h"
 
 namespace hittop {
