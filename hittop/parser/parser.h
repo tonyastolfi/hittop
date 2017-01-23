@@ -17,18 +17,18 @@ namespace parser {
 
 using util::Fallible;
 
-/// The form of a Parser class.  There is no generic implementation of Parser,
-/// only partial and full specializations that define how to parse specific
-/// grammars.
+// The form of a Parser class.  There is no generic implementation of Parser,
+// only partial and full specializations that define how to parse specific
+// grammars.
 template <typename Grammar> class Parser;
 
-template <typename Grammar, typename Range> struct ResultGetter {
+template <typename Grammar, typename Range> struct ParserRunner {
   using iterator = decltype(std::begin(std::declval<Range>()));
   using output_range_type = boost::iterator_range<iterator>;
   using result_type = Fallible<output_range_type>;
 
 public:
-  explicit ResultGetter(const Range &input) : input_(input) {}
+  explicit ParserRunner(const Range &input) : input_(input) {}
 
   template <typename... Args> result_type operator()(Args &&... args);
 
@@ -45,19 +45,19 @@ private:
   Fallible<iterator> result_;
 };
 
-/// Convenience wrapper around defining a new Parser object and invoking it on
-/// the given input range.  Allows the invocation operator defined on
-/// Parser<Grammer> to be non-const, as the parser instance created within this
-/// function is itself non-const.
+// Convenience wrapper around defining a new Parser object and invoking it on
+// the given input range.  Allows the invocation operator defined on
+// Parser<Grammer> to be non-const, as the parser instance created within this
+// function is itself non-const.
 template <typename Grammar, typename Range, typename Visitor,
           typename = std::enable_if_t<util::IsCallable<
-              Visitor, Grammar, ResultGetter<Grammar, const Range &>>::value>,
+              Visitor, Grammar, ParserRunner<Grammar, const Range &>>::value>,
           typename... Args>
 auto Parse(const Range &input, Visitor &&visitor, Args &&... args)
     -> decltype(std::declval<Parser<Grammar>>()(input)) {
-  ResultGetter<Grammar, Range> get_result{input};
-  std::forward<Visitor>(visitor)(Grammar{}, get_result);
-  return get_result.consume();
+  ParserRunner<Grammar, Range> run_parser{input};
+  std::forward<Visitor>(visitor)(Grammar{}, run_parser);
+  return run_parser.consume();
 }
 
 template <typename Grammar, typename Range, typename... Args>
@@ -67,19 +67,19 @@ auto Parse(const Range &input, Args &&... args)
   return parser(input, std::forward<Args>(args)...);
 }
 
-/// Convenience function that parses a C string as a literal character range.
+// Convenience function that parses a C string as a literal character range.
 template <typename Grammar>
 auto Parse(const char *input)
     -> decltype(Parse<Grammar>(boost::as_literal(input))) {
   return Parse<Grammar>(boost::as_literal(input));
 }
 
-/// Implementation of ResultGetter::operator() - invokes the parser on behalf of
-/// a visitor.
+// Implementation of ParserRunner::operator() - invokes the parser on behalf of
+// a visitor.
 template <typename Grammar, typename Range>
 template <typename... Args>
-inline typename ResultGetter<Grammar, Range>::result_type
-ResultGetter<Grammar, Range>::operator()(Args &&... args) {
+inline typename ParserRunner<Grammar, Range>::result_type
+ParserRunner<Grammar, Range>::operator()(Args &&... args) {
   called_ = true;
   result_ = Parse<Grammar>(input_, std::forward<Args>(args)...);
   return {boost::make_iterator_range(std::begin(input_), result_.get()),
