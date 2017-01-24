@@ -38,8 +38,23 @@ struct FindFirst<Predicate, std::tuple<>> {
   static const std::size_t index = 0;
 };
 
-} // namespace tuples
+namespace internal {
 
+template <class F, class Tuple, std::size_t... I>
+constexpr decltype(auto) ApplyImpl(F &&f, Tuple &&t,
+                                   std::index_sequence<I...>) {
+  return std::forward<F>(f)(std::get<I>(std::forward<Tuple>(t))...);
+}
+} // namespace internal
+
+template <class F, class Tuple>
+constexpr decltype(auto) Apply(F &&f, Tuple &&t) {
+  return internal::ApplyImpl(
+      std::forward<F>(f), std::forward<Tuple>(t),
+      std::make_index_sequence<std::tuple_size<std::decay_t<Tuple>>::value>{});
+}
+
+} // namespace tuples
 } // namespace util
 } // namespace hittop
 
