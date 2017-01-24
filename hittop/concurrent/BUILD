@@ -3,7 +3,7 @@ cc_library(
     hdrs = [
         "async_queue.h",
         "callback_target.h",
-        "latch.h",
+        "latching_signal.h",
     ],
     srcs = [
     ],
@@ -20,9 +20,7 @@ cc_library(
 cc_test(
     name = "callback_target-test",
     srcs = [
-        "async_queue-test.cc",
         "callback_target-test.cc",
-        "latch-test.cc",
     ],
     copts = [
         "-Iexternal/gtest/include",
@@ -51,18 +49,18 @@ cc_test(
     ],
 )
 
-cc_test(
-    name = "latch-test",
-    srcs = [
-        "latch-test.cc",
-    ],
-    copts = [
-        "-Iexternal/gtest/include",
-        "-std=c++14",
-    ],
-    deps = [
-        ":concurrent",
-        "@gtest//:main",
-        "@boost_1_62_0//:headers",
-    ],
-)
+#cc_test(
+#    name = "latching_signal-test",
+#    srcs = [
+#        "latching_signal-test.cc",
+#    ],
+#    copts = [
+#        "-Iexternal/gtest/include",
+#        "-std=c++14",
+#    ],
+#    deps = [
+#        ":concurrent",
+#        "@gtest//:main",
+#        "@boost_1_62_0//:headers",
+#    ],
+#)
