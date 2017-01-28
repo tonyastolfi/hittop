@@ -7,10 +7,7 @@
 #include <memory>
 #include <string>
 
-#include "hittop/concurrent/latch.h"
-
 using hittop::concurrent::AsyncQueue;
-using hittop::concurrent::Latch;
 
 namespace {
 struct TestHandler {
