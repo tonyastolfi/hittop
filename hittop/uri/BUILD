@@ -1,5 +1,5 @@
 cc_library(
-    name = "http",
+    name = "uri",
     hdrs = [
         "grammar.h",
     ],
@@ -24,7 +24,7 @@ cc_test(
     ],
     deps = [
         "@gtest//:main",
-        ":http",
+        ":uri",
         "//hittop/parser",
         "//hittop/util",
     ],

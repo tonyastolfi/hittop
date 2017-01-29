@@ -1,11 +1,17 @@
+// HTTP/1.1 Grammar as defined by RFC 2616:
+//  https://www.ietf.org/rfc/rfc2616.txt
+//
 #ifndef HITTOP_HTTP_GRAMMAR_H
 #define HITTOP_HTTP_GRAMMAR_H
+
+#include <cctype>
 
 #include "hittop/parser/any_char.h"
 #include "hittop/parser/at_least.h"
 #include "hittop/parser/char_filter.h"
 #include "hittop/parser/concat.h"
 #include "hittop/parser/either.h"
+#include "hittop/parser/forward_ref.h"
 #include "hittop/parser/implied_delim.h"
 #include "hittop/parser/literal.h"
 #include "hittop/parser/opt.h"
@@ -22,12 +28,10 @@ using DIGIT = parser::CharFilter<&std::isdigit>;
 
 using CRLF = parser::Concat<parser::Literal<'\r'>, parser::Literal<'\n'>>;
 
-using LWS = parser::Concat<parser::Opt<CRLF>,
-                           parser::AtLeast<1, parser::Either<' ', '\t'>>>;
-
-// Define a helper template for "implied *LWS" (RFC 2616, section 2.2, page 15)
-//
-template <typename... Parts> using Glue = parser::ImpliedDelim<LWS, Parts...>;
+using LWS =
+    parser::Concat<parser::Opt<CRLF>,
+                   parser::AtLeast<1, parser::Either<parser::Literal<' '>,
+                                                     parser::Literal<'\t'>>>>;
 
 using separators = parser::Either<
     parser::Literal<'('>, parser::Literal<')'>, parser::Literal<'<'>,
@@ -48,10 +52,16 @@ using ctext =
     parser::Unless<parser::Either<parser::Literal<'('>, parser::Literal<')'>>,
                    TEXT>;
 
-using comment =
-    parser::Concat<parser::Literal<'('>,
-                   parser::Repeat<parser::Either<ctext, quoted_pair, comment>>,
-                   parser::Literal<')'>>;
+struct comment_t;
+
+using comment = parser::ForwardRef<comment_t>;
+
+struct comment_t {
+  using type = parser::Concat<
+      parser::Literal<'('>,
+      parser::Repeat<parser::Either<ctext, quoted_pair, comment>>,
+      parser::Literal<')'>>;
+};
 
 using qdtext = parser::Unless<parser::Literal<'"'>, parser::AnyChar>;
 
@@ -62,6 +72,10 @@ using quoted_string =
 
 using token = parser::AtLeast<
     1, parser::Unless<parser::Either<CTLs, separators>, parser::AnyChar>>;
+
+// Define a helper template for "implied *LWS" (RFC 2616, section 2.2, page 15)
+//
+template <typename... Parts> using Glue = parser::ImpliedDelim<LWS, Parts...>;
 
 /* The definition of field-content (RFC/2616, section 4.2, page 32) strikes me
  * as particularly vague:
@@ -84,7 +98,7 @@ using field_name = token;
 using message_header =
     Glue<field_name, parser::Literal<':'>, parser::Opt<field_value>>;
 
-namespace token {
+namespace tokens {
 
 DEFINE_NAMED_TOKEN(Cache_Control, "Cache-Control");
 DEFINE_NAMED_TOKEN(Connection, "Connection");
@@ -107,7 +121,8 @@ DEFINE_NAMED_TOKEN(Warning, "Warning");
 
 using entity_body = parser::Repeat<OCTET>;
 
-using message_header = Glue<field_name, parser::Literal<':'>, Opt<field_value>>;
+using message_header =
+    Glue<field_name, parser::Literal<':'>, parser::Opt<field_value>>;
 
 using Content_Encoding =
     Glue<tokens::Content_Encoding, parser::Literal<':'>, field_value>;
