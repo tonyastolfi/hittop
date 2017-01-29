@@ -12,6 +12,7 @@ cc_library(
         "failure.h",
         "forward_ref.h",
         "force.h",
+        "implied_delim.h"
         "inter.h",
         "literal.h",
         "opt.h",
@@ -46,6 +47,7 @@ cc_test(
         "failure-test.cc",
         "forward_ref-test.cc",
         "force-test.cc",
+        "implied_delim-test.cc"
         "inter-test.cc",
         "literal-test.cc",
         "opt-test.cc",
