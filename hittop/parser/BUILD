@@ -19,6 +19,7 @@ cc_library(
         "parse_error.h",
         "parser.h",
         "repeat.h",
+        "repeat_and_then.h",
         "success.h",
         "token.h",
         "trim.h",
@@ -28,6 +29,7 @@ cc_library(
     deps = [
         "//hittop/util:util",
         "//hittop/util:functional",
+        "//third_party/short_alloc",
         "@boost_1_62_0//:headers",
     ],
     visibility = ["//visibility:public"]
@@ -53,6 +55,7 @@ cc_test(
         "opt-test.cc",
         "parse_error-test.cc",
         "repeat-test.cc",
+        "repeat_and_then-test.cc",
         "success-test.cc",
         "token-test.cc",
         "trim-test.cc",
