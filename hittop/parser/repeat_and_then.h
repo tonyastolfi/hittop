@@ -55,8 +55,8 @@ public:
 
     const auto last = std::end(input);
     Arena arena;
-    Buffer prior_success(arena);
-    prior_success.emplace_back(std::begin(input));
+    Buffer prior_success(BacktrackMemorySize, arena);
+    prior_success.push_back(std::begin(input));
     for (;;) {
       auto result = Parse<Repeated>(
           boost::make_iterator_range(prior_success.back(), last), args...);
@@ -66,10 +66,11 @@ public:
         }
         break;
       }
+      // Don't continue if no progress through the input was made.
       if (prior_success.back() == result.get()) {
         break;
       }
-      prior_success.emplace_back(result.consume());
+      prior_success.push_back(result.consume());
     }
 
     // Now try to parse the Rest; if we fail, keep back-tracking until we either
@@ -77,18 +78,17 @@ public:
     for (;;) {
       auto result = Parse<Rest>(
           boost::make_iterator_range(prior_success.back(), last), args...);
-      if (result.error()) {
-        if (result.error() == ParseError::INCOMPLETE) {
-          return result;
-        }
-        // Failed, so "unparse" one iteration of Repeated and try again.
-        if (prior_success.empty()) {
-          return result;
-        }
-        prior_success.pop_back();
-        continue;
+      if (!result.error()) {
+        return result;
       }
-      return result;
+      if (result.error() == ParseError::INCOMPLETE) {
+        return result;
+      }
+      // Failed, so "unparse" one iteration of Repeated and try again.
+      prior_success.pop_back();
+      if (prior_success.empty()) {
+        return result;
+      }
     }
   }
 };

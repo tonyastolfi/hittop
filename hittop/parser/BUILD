@@ -55,11 +55,26 @@ cc_test(
         "opt-test.cc",
         "parse_error-test.cc",
         "repeat-test.cc",
-        "repeat_and_then-test.cc",
         "success-test.cc",
         "token-test.cc",
         "trim-test.cc",
         "unless-test.cc",
+    ],
+    copts = [
+        "-Iexternal/gtest/include",
+        "-std=c++14",
+    ],
+    deps = [
+        "@gtest//:main",
+        ":parser",
+        "//hittop/util",
+    ],
+)
+
+cc_test(
+    name = "repeat_and_then-test",
+    srcs = [
+        "repeat_and_then-test.cc",
     ],
     copts = [
         "-Iexternal/gtest/include",

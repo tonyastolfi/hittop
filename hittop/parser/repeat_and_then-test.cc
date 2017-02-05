@@ -26,58 +26,55 @@ using CorrectGrammar =
     RepeatAndThen<CharFilter<&std::isalnum>, CharFilter<&isalpha>>;
 
 namespace tokens {
-DEFINE_TOKEN(end);
+DEFINE_TOKEN(eoi);
 } // tokens
 
 using BadBacktrackGrammar =
-    Concat<Repeat<CharFilter<&std::isalpha>>, tokens::end>;
+    Concat<Repeat<CharFilter<&std::isalpha>>, tokens::eoi>;
 
-using CorrectBackgrackGrammar =
-    RepeatAndThen<CharFilter<&std::isalpha>, tokens::end>;
-
-std::string backtrack_good_input() { return "abcdefgend"; }
-std::string backtrack_bad_input() { return "abcdefg123"; }
+using CorrectBacktrackGrammar =
+    RepeatAndThen<CharFilter<&std::isalpha>, tokens::eoi>;
 //
 } // namespace
 
 TEST(RepeatAndThenTest, ConcatRepeatFails) {
-  std::string in = "a1b2c3d";
+  std::string in = "a1b2c3d!";
   auto result = Parse<BadGrammar>(in);
   EXPECT_FALSE(!result.error());
-  EXPECT_EQ(in.end(), result.get());
+  EXPECT_EQ(std::prev(in.end()), result.get());
 }
 
 TEST(RepeatAndThenTest, Ok) {
-  std::string in = "a1b2c3d";
-  auto result = Parse<CorrectGrammar>(in);
-  EXPECT_FALSE(result.error());
-  EXPECT_EQ(in.end(), result.get());
-}
-
-TEST(RepeatAndThenTest, OkBacktrack1) {
-  std::string in = "a1b2c3d4";
+  std::string in = "a1b2c3d!";
   auto result = Parse<CorrectGrammar>(in);
   EXPECT_FALSE(result.error());
   EXPECT_EQ(std::prev(in.end()), result.get());
 }
 
+TEST(RepeatAndThenTest, OkBacktrack1) {
+  std::string in = "a1b2c3d4!";
+  auto result = Parse<CorrectGrammar>(in);
+  EXPECT_FALSE(result.error());
+  EXPECT_EQ(std::prev(in.end(), 2), result.get());
+}
+
 TEST(RepeatAndThenTest, BacktrackConcatRepeatFails) {
-  auto in = backtrack_good_input();
-  auto result = Parse<BacktrackBadGrammar>(in);
+  std::string in = "abcdefgeoi!";
+  auto result = Parse<BadBacktrackGrammar>(in);
   EXPECT_FALSE(!result.error());
-  EXPECT_EQ(in.end(), result.get());
+  EXPECT_EQ(std::prev(in.end()), result.get());
 }
 
 TEST(RepeatAndThenTest, BacktrackOk) {
-  auto in = backtrack_good_input();
-  auto result = Parse<BacktrackCorrectGrammar>(in);
+  std::string in = "abcdefgeoi!";
+  auto result = Parse<CorrectBacktrackGrammar>(in);
   EXPECT_FALSE(result.error());
-  EXPECT_EQ(in.end(), result.get());
+  EXPECT_EQ(std::prev(in.end()), result.get());
 }
 
 TEST(RepeatAndThenTest, BacktrackFail) {
-  auto in = backtrack_bad_input();
-  auto result = Parse<BacktrackCorrectGrammar>(in);
+  std::string in = "abcdefgfoo!";
+  auto result = Parse<CorrectBacktrackGrammar>(in);
   EXPECT_FALSE(!result.error());
   EXPECT_EQ(in.begin(), result.get());
 }
