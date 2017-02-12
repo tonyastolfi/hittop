@@ -112,3 +112,17 @@ cc_test(
         ":functional",
     ],
 )
+
+cc_library(
+    name = "abi",
+    hdrs = [
+        "demangle.h",
+    ],
+    copts = [
+        "-std=c++14"
+    ],
+    deps = [
+        "@boost_1_62_0//:headers",
+    ],
+    visibility = ["//visibility:public"]
+)

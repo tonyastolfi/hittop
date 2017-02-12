@@ -1,6 +1,7 @@
 cc_library(
     name = "uri",
     hdrs = [
+        "basic_uri.h",
         "grammar.h",
     ],
     copts = ["-std=c++14"],
@@ -8,6 +9,7 @@ cc_library(
         "//hittop/util:util",
         "//hittop/util:functional",
         "//hittop/parser",
+        "//third_party/short_alloc",
         "@boost_1_62_0//:headers",
     ],
     visibility = ["//visibility:public"]
@@ -27,5 +29,24 @@ cc_test(
         ":uri",
         "//hittop/parser",
         "//hittop/util",
+        "//hittop/util:functional",
+    ],
+)
+
+cc_test(
+    name = "basic_uri-test",
+    srcs = [
+        "basic_uri-test.cc",
+    ],
+    copts = [
+        "-Iexternal/gtest/include",
+        "-std=c++14",
+    ],
+    deps = [
+        "@gtest//:main",
+        ":uri",
+        "//hittop/parser",
+        "//hittop/util",
+        "//hittop/util:functional",
     ],
 )

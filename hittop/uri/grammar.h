@@ -11,6 +11,7 @@
 #include "hittop/parser/char_filter.h"
 #include "hittop/parser/concat.h"
 #include "hittop/parser/either.h"
+#include "hittop/parser/forward_ref.h"
 #include "hittop/parser/inter.h"
 #include "hittop/parser/literal.h"
 #include "hittop/parser/repeat.h"
@@ -77,7 +78,10 @@ using pchar = parser::Either<unreserved, escaped, parser::Literal<':'>,
 
 // param         = *pchar
 //
-using param = parser::Repeat<pchar>;
+struct param_ {
+  using type = parser::Repeat<pchar>;
+};
+using param = parser::ForwardRef<param_>;
 
 // segment       = *pchar *( ";" param )
 //
@@ -220,6 +224,51 @@ using relativeURI =
 using URI_reference =
     parser::Concat<parser::Opt<parser::Either<absoluteURI, relativeURI>>,
                    parser::Opt<parser::Concat<parser::Literal<'#'>, fragment>>>;
+
+template <typename Map> void RegisterRuleNames(Map &names) {
+  REGISTER_PARSE_RULE(alpha);
+  REGISTER_PARSE_RULE(digit);
+  REGISTER_PARSE_RULE(alphanum);
+  REGISTER_PARSE_RULE(hex);
+  REGISTER_PARSE_RULE(control);
+  REGISTER_PARSE_RULE(space);
+  REGISTER_PARSE_RULE(reserved);
+  REGISTER_PARSE_RULE(mark);
+  REGISTER_PARSE_RULE(unreserved);
+  REGISTER_PARSE_RULE(escaped);
+  REGISTER_PARSE_RULE(uric);
+  REGISTER_PARSE_RULE(delims);
+  REGISTER_PARSE_RULE(unwise);
+  REGISTER_PARSE_RULE(uric_no_slash);
+  REGISTER_PARSE_RULE(opaque_part);
+  REGISTER_PARSE_RULE(pchar);
+  REGISTER_PARSE_RULE(param);
+  REGISTER_PARSE_RULE(segment);
+  REGISTER_PARSE_RULE(path_segments);
+  REGISTER_PARSE_RULE(abs_path);
+  REGISTER_PARSE_RULE(path);
+  REGISTER_PARSE_RULE(reg_name);
+  REGISTER_PARSE_RULE(userinfo);
+  REGISTER_PARSE_RULE(domainlabel);
+  REGISTER_PARSE_RULE(toplabel);
+  REGISTER_PARSE_RULE(hostname);
+  REGISTER_PARSE_RULE(IPv4Address);
+  REGISTER_PARSE_RULE(port);
+  REGISTER_PARSE_RULE(host);
+  REGISTER_PARSE_RULE(hostport);
+  REGISTER_PARSE_RULE(server);
+  REGISTER_PARSE_RULE(authority);
+  REGISTER_PARSE_RULE(net_path);
+  REGISTER_PARSE_RULE(query);
+  REGISTER_PARSE_RULE(fragment);
+  REGISTER_PARSE_RULE(hier_part);
+  REGISTER_PARSE_RULE(scheme);
+  REGISTER_PARSE_RULE(absoluteURI);
+  REGISTER_PARSE_RULE(rel_segment);
+  REGISTER_PARSE_RULE(rel_path);
+  REGISTER_PARSE_RULE(relativeURI);
+  REGISTER_PARSE_RULE(URI_reference);
+}
 
 } // namespace grammar
 } // namespace uri

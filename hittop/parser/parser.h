@@ -89,4 +89,7 @@ ParserRunner<Grammar, Range>::operator()(Args &&... args) {
 } // namespace parser
 } // namespace hittop
 
+#define REGISTER_PARSE_RULE(name)                                              \
+  names.emplace(std::make_pair(&typeid(name), #name))
+
 #endif // HITTOP_PARSER_PARSER_H

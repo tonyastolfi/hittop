@@ -22,11 +22,13 @@ cc_library(
         "repeat_and_then.h",
         "success.h",
         "token.h",
+        "trace_visitor.h",
         "trim.h",
         "unless.h",
     ],
     copts = ["-std=c++14"],
     deps = [
+        "//hittop/util:abi",
         "//hittop/util:util",
         "//hittop/util:functional",
         "//third_party/short_alloc",
