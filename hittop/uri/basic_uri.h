@@ -61,18 +61,19 @@ template <
         SubRange, ::short_alloc::short_alloc<SubRange, DEFAULT_ARENA_SIZE>>,
     typename SubRangeMap = std::unordered_map<
         SubRange, SubRange, std::hash<SubRange>, std::equal_to<SubRange>,
-        ::short_alloc<SubRange, DEFAULT_ARENA_SIZE>>,
-    typename InPlaceFactoryBuilder = internal::ArenaFactory<DEFAULT_ARENA_SIZE>>
+        ::short_alloc::short_alloc<SubRange, DEFAULT_ARENA_SIZE>>,
+    typename InPlaceFactoryBuilder =
+        internal::ArenaFactoryBuilder<DEFAULT_ARENA_SIZE>>
 class BasicUri {
 public:
-  Uri() : uri_() {}
+  BasicUri() : uri_() {}
 
-  Uri &operator=(const Range &range) {
+  BasicUri &operator=(const Range &range) {
     uri_ = range;
     return *this;
   }
 
-  Uri &operator(Range &&range) {
+  BasicUri &operator=(Range &&range) {
     uri_ = std::move(range);
     return *this;
   }
@@ -81,17 +82,17 @@ public:
     uri_ = builder_.in_place(std::forward<Args>(args)...);
   }
 
-  auto begin() { return std::begin(*range_); }
+  auto begin() { return std::begin(*uri_); }
 
-  auto begin() const { return std::begin(*range_); }
+  auto begin() const { return std::begin(*uri_); }
 
-  auto cbegin() const { return std::cbegin(*range_); }
+  auto cbegin() const { return std::cbegin(*uri_); }
 
-  auto end() { return std::begin(*range_); }
+  auto end() { return std::begin(*uri_); }
 
-  auto end() const { return std::begin(*range_); }
+  auto end() const { return std::begin(*uri_); }
 
-  auto cend() const { return std::cbegin(*range_); }
+  auto cend() const { return std::cbegin(*uri_); }
 
   const boost::optional<SubRange> &scheme() const { return scheme_; }
 
@@ -113,7 +114,7 @@ public:
 
   const boost::optional<unsigned> &port() const { return port_; }
 
-  void assign_port(unsigned p){port_ = p};
+  void assign_port(unsigned p) { port_ = p; }
 
   const boost::optional<SubRange> &path() const { return path_; }
 
@@ -156,7 +157,7 @@ public:
   }
 
 private:
-  InPlaceFactory builder_;
+  InPlaceFactoryBuilder builder_;
   boost::optional<Range> uri_;
   boost::optional<SubRange> scheme_;
   boost::optional<SubRange> username_;
