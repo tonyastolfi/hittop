@@ -160,10 +160,12 @@ using hostport =
     parser::Concat<host,
                    parser::Opt<parser::Concat<parser::Literal<':'>, port>>>;
 
+// userinfo_at   = userinfo "@"
+using userinfo_at = parser::Concat<userinfo, parser::Literal<'@'>>;
+
 // server        = [ [ userinfo "@" ] hostport ]
 //
-using server = parser::Opt<parser::Concat<
-    parser::Opt<parser::Concat<userinfo, parser::Literal<'@'>>>, hostport>>;
+using server = parser::Opt<parser::Concat<parser::Opt<userinfo_at>, hostport>>;
 
 // authority     = server | reg_name
 //
@@ -176,11 +178,17 @@ using net_path = parser::Concat<parser::Literal<'/'>, parser::Literal<'/'>,
 
 // query         = *uric
 //
-using query = parser::Repeat<uric>;
+struct query_ {
+  using type = parser::Repeat<uric>;
+};
+using query = parser::ForwardRef<query_>;
 
 // fragment      = *uric
 //
-using fragment = parser::Repeat<uric>;
+struct fragment_ {
+  using type = parser::Repeat<uric>;
+};
+using fragment = parser::ForwardRef<fragment_>;
 
 // hier_part     = ( net_path | abs_path ) [ "?" query ]
 //
@@ -190,10 +198,14 @@ using hier_part =
 
 // scheme        = alpha *( alpha | digit | parser::Literal<'+'>,
 // parser::Literal<'-'>, "." )
-using scheme = parser::Concat<
-    alpha,
-    parser::Repeat<parser::Either<alpha, digit, parser::Literal<'+'>,
-                                  parser::Literal<'-'>, parser::Literal<'.'>>>>;
+
+struct scheme_ {
+  using type =
+      parser::Concat<alpha, parser::Repeat<parser::Either<
+                                alpha, digit, parser::Literal<'+'>,
+                                parser::Literal<'-'>, parser::Literal<'.'>>>>;
+};
+using scheme = parser::ForwardRef<scheme_>;
 
 // absoluteURI   = scheme ":" ( hier_part | opaque_part )
 using absoluteURI = parser::Concat<scheme, parser::Literal<':'>,

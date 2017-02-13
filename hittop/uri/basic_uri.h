@@ -21,7 +21,7 @@ constexpr std::size_t DEFAULT_ARENA_SIZE = 4096;
 namespace internal {
 
 template <typename T, typename Arena> struct TypedArenaFactoryBuilder {
-  template <typename... Args> auto in_place(Args &&... args) const {
+  template <typename... Args> auto in_place(Args &&... args) {
     return boost::in_place<T>(std::forward<Args>(args)..., arena_);
   }
 
@@ -30,7 +30,7 @@ template <typename T, typename Arena> struct TypedArenaFactoryBuilder {
 
 template <typename Iterator, typename Arena>
 struct TypedArenaFactoryBuilder<boost::iterator_range<Iterator>, Arena> {
-  template <typename... Args> auto in_place(Args &&... args) const {
+  template <typename... Args> auto in_place(Args &&... args) {
     return boost::in_place<boost::iterator_range<Iterator>>(
         std::forward<Args>(args)...);
   }
@@ -42,9 +42,9 @@ template <std::size_t kSize> class ArenaFactoryBuilder {
 public:
   using Arena = ::short_alloc::arena<kSize>;
 
-  template <typename T, typename... Args> auto in_place(Args &&... args) const {
-    return TypedArenaFactoryBuilder<T, Arena &>{arena_}.in_place(
-        std::forward<Args>(args)...);
+  template <typename T, typename... Args> auto in_place(Args &&... args) {
+    TypedArenaFactoryBuilder<T, Arena &> typed_builder(arena_);
+    return typed_builder.in_place(std::forward<Args>(args)...);
   }
 
 private:
@@ -56,12 +56,13 @@ private:
 template <
     typename Range,
     typename SubRange =
-        boost::iterator_range<decltype(std::begin(std::declval<Range>()))>,
+        boost::iterator_range<decltype(std::cbegin(std::declval<Range>()))>,
     typename SubRangeSequence = std::vector<
         SubRange, ::short_alloc::short_alloc<SubRange, DEFAULT_ARENA_SIZE>>,
     typename SubRangeMap = std::unordered_map<
         SubRange, SubRange, std::hash<SubRange>, std::equal_to<SubRange>,
-        ::short_alloc::short_alloc<SubRange, DEFAULT_ARENA_SIZE>>,
+        ::short_alloc::short_alloc<std::pair<const SubRange, SubRange>,
+                                   DEFAULT_ARENA_SIZE>>,
     typename InPlaceFactoryBuilder =
         internal::ArenaFactoryBuilder<DEFAULT_ARENA_SIZE>>
 class BasicUri {
@@ -79,7 +80,7 @@ public:
   }
 
   template <typename... Args> void assign(Args &&... args) {
-    uri_ = builder_.in_place(std::forward<Args>(args)...);
+    uri_ = builder_.template in_place<Range>(std::forward<Args>(args)...);
   }
 
   auto begin() { return std::begin(*uri_); }
@@ -97,19 +98,21 @@ public:
   const boost::optional<SubRange> &scheme() const { return scheme_; }
 
   template <typename... Args> void assign_scheme(Args &&... args) {
-    scheme_ = builder_.in_place(std::forward<Args>(args)...);
+    scheme_ = builder_.template in_place<SubRange>(std::forward<Args>(args)...);
   }
 
-  const boost::optional<SubRange> &username() const { return username_; }
+  const boost::optional<SubRange> &user() const { return user_; }
 
-  template <typename... Args> void assign_username(Args &&... args) {
-    username_ = builder_.in_place(std::forward<Args>(args)...);
+  template <typename... Args> void assign_user(Args &&... args) {
+    user_ = builder_.template in_place<SubRange>(std::forward<Args>(args)...);
   }
+
+  void reset_user() { user_ = boost::none; }
 
   const boost::optional<SubRange> &host() const { return host_; }
 
   template <typename... Args> void assign_host(Args &&... args) {
-    host_ = builder_.in_place(std::forward<Args>(args)...);
+    host_ = builder_.template in_place<SubRange>(std::forward<Args>(args)...);
   }
 
   const boost::optional<unsigned> &port() const { return port_; }
@@ -119,19 +122,20 @@ public:
   const boost::optional<SubRange> &path() const { return path_; }
 
   template <typename... Args> void assign_path(Args &&... args) {
-    path_ = builder_.in_place(std::forward<Args>(args)...);
+    path_ = builder_.template in_place<SubRange>(std::forward<Args>(args)...);
   }
 
   const boost::optional<SubRange> &query() const { return query_; }
 
   template <typename... Args> void assign_query(Args &&... args) {
-    query_ = builder_.in_place(std::forward<Args>(args)...);
+    query_ = builder_.template in_place<SubRange>(std::forward<Args>(args)...);
   }
 
   const boost::optional<SubRange> &fragment() const { return query_; }
 
   template <typename... Args> void assign_fragment(Args &&... args) {
-    fragment_ = builder_.in_place(std::forward<Args>(args)...);
+    fragment_ =
+        builder_.template in_place<SubRange>(std::forward<Args>(args)...);
   }
 
   const boost::optional<SubRangeSequence> &path_segments() const {
@@ -140,7 +144,7 @@ public:
 
   SubRangeSequence *mutable_path_segments() {
     if (!path_segments_) {
-      path_segments_ = builder_.in_place();
+      path_segments_ = builder_.template in_place<SubRangeSequence>();
     }
     return path_segments_.get_ptr();
   }
@@ -149,9 +153,9 @@ public:
     return query_params_;
   }
 
-  SubRangeSequence *mutable_query_params() {
+  SubRangeMap *mutable_query_params() {
     if (!query_params_) {
-      query_params_ = builder_.in_place();
+      query_params_ = builder_.template in_place<SubRangeMap>();
     }
     return query_params_.get_ptr();
   }
@@ -160,7 +164,7 @@ private:
   InPlaceFactoryBuilder builder_;
   boost::optional<Range> uri_;
   boost::optional<SubRange> scheme_;
-  boost::optional<SubRange> username_;
+  boost::optional<SubRange> user_;
   boost::optional<SubRange> host_;
   boost::optional<unsigned> port_;
   boost::optional<SubRange> path_;
@@ -169,6 +173,13 @@ private:
   boost::optional<SubRangeSequence> path_segments_;
   boost::optional<SubRangeMap> query_params_;
 };
+
+using Uri = BasicUri<std::string, std::string>;
+
+using FastUri = BasicUri<std::string>;
+
+template <typename Iterator>
+using ZeroCopyUri = BasicUri<boost::iterator_range<Iterator>>;
 
 } // namespace uri
 } // namespace hittop

@@ -3,6 +3,7 @@ cc_library(
     hdrs = [
         "basic_uri.h",
         "grammar.h",
+        "uri_parse_visitor.h"
     ],
     copts = ["-std=c++14"],
     deps = [
@@ -37,6 +38,24 @@ cc_test(
     name = "basic_uri-test",
     srcs = [
         "basic_uri-test.cc",
+    ],
+    copts = [
+        "-Iexternal/gtest/include",
+        "-std=c++14",
+    ],
+    deps = [
+        "@gtest//:main",
+        ":uri",
+        "//hittop/parser",
+        "//hittop/util",
+        "//hittop/util:functional",
+    ],
+)
+
+cc_test(
+    name = "parse-test",
+    srcs = [
+        "parse-test.cc",
     ],
     copts = [
         "-Iexternal/gtest/include",
