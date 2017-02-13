@@ -24,13 +24,17 @@ TEST_F(UriParseVisitorTest, Example1) {
       input, MakeUriParseVisitor(&uri));
 
   EXPECT_FALSE(result.error());
-  EXPECT_FALSE(!uri.scheme());
-  EXPECT_FALSE(!uri.user());
-  EXPECT_FALSE(!uri.host());
-  EXPECT_FALSE(!uri.port());
-  EXPECT_FALSE(!uri.path());
-  EXPECT_FALSE(!uri.fragment());
-  EXPECT_FALSE(!uri.query());
+  ASSERT_FALSE(!uri.scheme());
+  EXPECT_EQ(uri.scheme().get(), "https");
+  EXPECT_FALSE(uri.user());
+  ASSERT_FALSE(!uri.host());
+  EXPECT_EQ(uri.host().get(), "example.org");
+  EXPECT_FALSE(uri.port());
+  ASSERT_FALSE(!uri.path());
+  EXPECT_EQ(uri.path().get(),
+            "/absolute/URI/with/absolute/path/to/resource.txt");
+  EXPECT_FALSE(uri.fragment());
+  EXPECT_FALSE(uri.query());
 }
 
 } // namespace

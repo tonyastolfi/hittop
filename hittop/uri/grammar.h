@@ -113,11 +113,13 @@ using reg_name = parser::AtLeast<
 // userinfo      = *( unreserved | escaped |
 //                    ";" | ":" | "&" | "=" | "+" | "$" | ","  )
 //
-using userinfo =
-    parser::Repeat<parser::Either<unreserved, escaped, parser::Literal<';'>,
-                                  parser::Literal<':'>, parser::Literal<'&'>,
-                                  parser::Literal<'='>, parser::Literal<'+'>,
-                                  parser::Literal<'$'>, parser::Literal<','>>>;
+struct userinfo_ {
+  using type = parser::Repeat<parser::Either<
+      unreserved, escaped, parser::Literal<';'>, parser::Literal<':'>,
+      parser::Literal<'&'>, parser::Literal<'='>, parser::Literal<'+'>,
+      parser::Literal<'$'>, parser::Literal<','>>>;
+};
+using userinfo = parser::ForwardRef<userinfo_>;
 
 // domainlabel   = alphanum | alphanum *( alphanum | "-" ) alphanum
 //
@@ -169,7 +171,7 @@ using server = parser::Opt<parser::Concat<parser::Opt<userinfo_at>, hostport>>;
 
 // authority     = server | reg_name
 //
-using authority = parser::Either<reg_name, server>;
+using authority = parser::Either<server, reg_name>;
 
 // net_path      = "//" authority [abs_path]
 //
@@ -261,6 +263,7 @@ template <typename Map> void RegisterRuleNames(Map &names) {
   REGISTER_PARSE_RULE(path);
   REGISTER_PARSE_RULE(reg_name);
   REGISTER_PARSE_RULE(userinfo);
+  REGISTER_PARSE_RULE(userinfo_at);
   REGISTER_PARSE_RULE(domainlabel);
   REGISTER_PARSE_RULE(toplabel);
   REGISTER_PARSE_RULE(hostname);

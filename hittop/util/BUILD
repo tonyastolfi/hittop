@@ -126,3 +126,16 @@ cc_library(
     ],
     visibility = ["//visibility:public"]
 )
+
+cc_library(
+    name = "debug",
+    hdrs = [
+        "backtrace.h",
+    ],
+    copts = [
+        "-std=c++14"
+    ],
+    deps = [
+    ],
+    visibility = ["//visibility:public"]
+)

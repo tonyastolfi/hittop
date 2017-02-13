@@ -20,30 +20,64 @@ constexpr std::size_t DEFAULT_ARENA_SIZE = 4096;
 
 namespace internal {
 
-template <typename T, typename Arena> struct TypedArenaFactoryBuilder {
+// TODO - capture this in a more generic pattern
+template <typename T, typename Alloc> struct TypedAllocFactoryBuilder {
+private:
+  template <typename Base>
+  class InPlaceFactory : public boost::typed_in_place_factory_base {
+  public:
+    // TODO -- it has to be the arena that is a member of this case which is the
+    // one that is passed to boost::in_place<T>.
+    explicit InPlaceFactory(Base &&base, const Alloc &alloc)
+        : base_(std::move(base)), alloc_(alloc) {}
+
+    void *apply(void *address) const { return base_.apply(address); }
+
+  private:
+    Alloc alloc_;
+    Base base_;
+  };
+
+public:
+  explicit TypedAllocFactoryBuilder(typename Alloc::arena_type &arena)
+      : alloc_(arena) {}
+
   template <typename... Args> auto in_place(Args &&... args) {
-    return boost::in_place<T>(std::forward<Args>(args)..., arena_);
+    auto base = boost::in_place<T>(args..., alloc_);
+    return InPlaceFactory<decltype(base)>(std::move(base), alloc_);
   }
 
-  Arena arena_;
+private:
+  Alloc alloc_;
 };
 
-template <typename Iterator, typename Arena>
-struct TypedArenaFactoryBuilder<boost::iterator_range<Iterator>, Arena> {
+template <typename Iterator, typename Alloc>
+class TypedAllocFactoryBuilder<boost::iterator_range<Iterator>, Alloc> {
+public:
+  explicit TypedAllocFactoryBuilder(typename Alloc::arena_type &) {}
+
   template <typename... Args> auto in_place(Args &&... args) {
     return boost::in_place<boost::iterator_range<Iterator>>(
         std::forward<Args>(args)...);
   }
+};
 
-  Arena arena_;
+template <typename Alloc> struct TypedAllocFactoryBuilder<std::string, Alloc> {
+public:
+  explicit TypedAllocFactoryBuilder(typename Alloc::arena_type &) {}
+
+  template <typename... Args> auto in_place(Args &&... args) {
+    return boost::in_place<std::string>(std::forward<Args>(args)...);
+  }
 };
 
 template <std::size_t kSize> class ArenaFactoryBuilder {
 public:
   using Arena = ::short_alloc::arena<kSize>;
+  template <typename T> using Alloc = ::short_alloc::short_alloc<T, kSize>;
 
   template <typename T, typename... Args> auto in_place(Args &&... args) {
-    TypedArenaFactoryBuilder<T, Arena &> typed_builder(arena_);
+    TypedAllocFactoryBuilder<T, Alloc<T>> typed_builder(arena_);
     return typed_builder.in_place(std::forward<Args>(args)...);
   }
 
@@ -67,7 +101,15 @@ template <
         internal::ArenaFactoryBuilder<DEFAULT_ARENA_SIZE>>
 class BasicUri {
 public:
+  using part_type = SubRange;
+  using sequence_type = SubRangeSequence;
+  using map_type = SubRangeMap;
+
   BasicUri() : uri_() {}
+
+  BasicUri(const BasicUri &) = delete;
+
+  BasicUri &operator=(const BasicUri &) = delete;
 
   BasicUri &operator=(const Range &range) {
     uri_ = range;

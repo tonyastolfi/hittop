@@ -48,11 +48,24 @@ public:
     }
   }
 
-  template <typename F> void operator()(grammar::path, F &&run_parser) const {
-    auto *segments = uri_->mutable_path_segments();
+  template <typename F>
+  void operator()(grammar::abs_path, F &&run_parser) const {
+    visit_path(std::forward<F>(run_parser));
+  }
+
+  template <typename F>
+  void operator()(grammar::rel_path, F &&run_parser) const {
+    visit_path(std::forward<F>(run_parser));
+  }
+
+private:
+  template <typename F> void visit_path(F &&run_parser) const {
+    typename Uri::sequence_type *segments = uri_->mutable_path_segments();
     auto result = run_parser([segments](grammar::segment, auto &&run_parser) {
       auto result = run_parser();
       if (!result.error()) {
+        std::clog << "  path segment: " << util::RangeToString(result.get())
+                  << std::endl;
         segments->emplace_back(std::begin(result.get()),
                                std::end(result.get()));
       }
@@ -62,6 +75,7 @@ public:
     }
   }
 
+public:
   template <typename F> void operator()(grammar::query, F &&run_parser) const {
     // TDOD
     //    auto * params = uri_->mutable_query_params();
