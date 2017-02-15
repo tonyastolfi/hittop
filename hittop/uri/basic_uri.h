@@ -13,6 +13,8 @@
 
 #include "third_party/short_alloc/short_alloc.h"
 
+#include "hittop/util/saved_in_place_factory.h"
+
 namespace hittop {
 namespace uri {
 
@@ -20,41 +22,24 @@ constexpr std::size_t DEFAULT_ARENA_SIZE = 4096;
 
 namespace internal {
 
-// TODO - capture this in a more generic pattern
-template <typename T, typename Alloc> struct TypedAllocFactoryBuilder {
-private:
-  template <typename Base>
-  class InPlaceFactory : public boost::typed_in_place_factory_base {
-  public:
-    // TODO -- it has to be the arena that is a member of this case which is the
-    // one that is passed to boost::in_place<T>.
-    explicit InPlaceFactory(Base &&base, const Alloc &alloc)
-        : base_(std::move(base)), alloc_(alloc) {}
-
-    void *apply(void *address) const { return base_.apply(address); }
-
-  private:
-    Alloc alloc_;
-    Base base_;
-  };
-
+template <typename T, typename Allocator> struct TypedAllocFactoryBuilder {
 public:
-  explicit TypedAllocFactoryBuilder(typename Alloc::arena_type &arena)
-      : alloc_(arena) {}
+  explicit TypedAllocFactoryBuilder(typename Allocator::arena_type &arena)
+      : allocator_(arena) {}
 
   template <typename... Args> auto in_place(Args &&... args) {
-    auto base = boost::in_place<T>(args..., alloc_);
-    return InPlaceFactory<decltype(base)>(std::move(base), alloc_);
+    return util::SavedInPlace<T>(std::cref(std::forward<Args>(args))...,
+                                 allocator_);
   }
 
 private:
-  Alloc alloc_;
+  Allocator allocator_;
 };
 
-template <typename Iterator, typename Alloc>
-class TypedAllocFactoryBuilder<boost::iterator_range<Iterator>, Alloc> {
+template <typename Iterator, typename Allocator>
+class TypedAllocFactoryBuilder<boost::iterator_range<Iterator>, Allocator> {
 public:
-  explicit TypedAllocFactoryBuilder(typename Alloc::arena_type &) {}
+  explicit TypedAllocFactoryBuilder(typename Allocator::arena_type &) {}
 
   template <typename... Args> auto in_place(Args &&... args) {
     return boost::in_place<boost::iterator_range<Iterator>>(
@@ -62,9 +47,10 @@ public:
   }
 };
 
-template <typename Alloc> struct TypedAllocFactoryBuilder<std::string, Alloc> {
+template <typename Allocator>
+struct TypedAllocFactoryBuilder<std::string, Allocator> {
 public:
-  explicit TypedAllocFactoryBuilder(typename Alloc::arena_type &) {}
+  explicit TypedAllocFactoryBuilder(typename Allocator::arena_type &) {}
 
   template <typename... Args> auto in_place(Args &&... args) {
     return boost::in_place<std::string>(std::forward<Args>(args)...);
@@ -74,10 +60,10 @@ public:
 template <std::size_t kSize> class ArenaFactoryBuilder {
 public:
   using Arena = ::short_alloc::arena<kSize>;
-  template <typename T> using Alloc = ::short_alloc::short_alloc<T, kSize>;
+  template <typename T> using Allocator = ::short_alloc::short_alloc<T, kSize>;
 
   template <typename T, typename... Args> auto in_place(Args &&... args) {
-    TypedAllocFactoryBuilder<T, Alloc<T>> typed_builder(arena_);
+    TypedAllocFactoryBuilder<T, Allocator<T>> typed_builder(arena_);
     return typed_builder.in_place(std::forward<Args>(args)...);
   }
 
