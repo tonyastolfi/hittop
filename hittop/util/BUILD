@@ -4,6 +4,7 @@ cc_library(
         "fallible.h",
         "load_file_as_string.h",
         "range_to_string.h",
+        "saved_in_place_factory.h",
         "scope_exit.h",
         "type_traits.h",
     ],
