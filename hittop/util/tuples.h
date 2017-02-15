@@ -43,7 +43,7 @@ namespace internal {
 template <class F, class Tuple, std::size_t... I>
 constexpr decltype(auto) ApplyImpl(F &&f, Tuple &&t,
                                    std::index_sequence<I...>) {
-  return std::forward<F>(f)(std::get<I>(std::forward<Tuple>(t))...);
+  return std::forward<F>(f)(std::get<I>(t)...);
 }
 } // namespace internal
 
