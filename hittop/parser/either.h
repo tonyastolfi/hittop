@@ -39,6 +39,10 @@ template <typename First, typename... Rest>
 class Parser<Either<First, Rest...>>
     : public Parser<Either<First, Either<Rest...>>> {};
 
+// TODO(tonyastolfi) - implement optimized case for:
+//  Either<Token<>, Token<>, Token<>, ...>
+// Sort the list of tokens once and then binary-search them.
+
 } // namespace parser
 } // namespace hittop
 

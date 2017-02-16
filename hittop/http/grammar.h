@@ -17,6 +17,7 @@
 #include "hittop/parser/opt.h"
 #include "hittop/parser/token.h"
 #include "hittop/parser/unless.h"
+#include "hittop/uri/grammar.h"
 
 namespace hittop {
 namespace http {
@@ -25,6 +26,8 @@ namespace grammar {
 using OCTET = parser::AnyChar;
 
 using DIGIT = parser::CharFilter<&std::isdigit>;
+
+using SP = parser::Literal<' '>;
 
 using CRLF = parser::Concat<parser::Literal<'\r'>, parser::Literal<'\n'>>;
 
@@ -133,12 +136,16 @@ using Content_Language =
 using Content_Length = Glue<tokens::Content_Length, parser::Literal<':'>,
                             parser::AtLeast<1, DIGIT>>;
 
+using absoluteURI = uri::grammar::absoluteURI;
+using relativeURI = uri::grammar::relativeURI;
+
 using Content_Location = Glue<tokens::Content_Location, parser::Literal<':'>,
                               parser::Either<absoluteURI, relativeURI>>;
 
+/*
 using extension_header = message_header;
 
-using entity_header = Parser::Either<Allow,            //
+using entity_header = parser::Either<Allow,            //
                                      Content_Encoding, //
                                      Content_Language, //
                                      Content_Length,   //
@@ -150,7 +157,7 @@ using entity_header = Parser::Either<Allow,            //
                                      Last_Modified,    //
                                      extension_header>;
 
-using response_header = Parser::Either<Accept_Ranges,      //
+using response_header = parser::Either<Accept_Ranges,      //
                                        Age,                //
                                        ETag,               //
                                        Location,           //
@@ -159,30 +166,45 @@ using response_header = Parser::Either<Accept_Ranges,      //
                                        Server,             //
                                        Vary,               //
                                        WWW_Authenticate>;
+*/
 
 using Reason_Phrase =
-    parser::Repeat<paser::Unless<parser::Either<parser::Literal<'\r'>, //
-                                                parser::Literal<'\n'>>,
-                                 TEXT>>;
+    parser::Repeat<parser::Unless<parser::Either<parser::Literal<'\r'>, //
+                                                 parser::Literal<'\n'>>,
+                                  TEXT>>;
 
+// HTTP-Version   = "HTTP" "/" 1*DIGIT "." 1*DIGIT
+//
+DEFINE_NAMED_TOKEN(HTTP_slash, "HTTP/");
+
+using HTTP_Version =
+    parser::Concat<HTTP_slash, parser::AtLeast<1, DIGIT>, parser::Literal<'.'>,
+                   parser::AtLeast<1, DIGIT>>;
+
+/*
 using extension_code = parser::Exactly<3, DIGIT>;
 
 using Status_Code = parser::Either< //
     // TODO(tonyastolfi) - put in all the actual status-codes here?
     extension_code>;
+*/
+using Status_Code = parser::Exactly<3, DIGIT>;
 
 using Status_Line =
     parser::Concat<HTTP_Version, SP, Status_Code, SP, Reason_Phrase, CRLF>;
 
 using Response = parser::Concat<
-    Status_Line,                                                  //
-    parser::Repeat<parser::Concat<parser::Either<general_header,  //
-                                                 response_header, //
-                                                 entity_header>,
-                                  CRLF>>, //
-    CRLF,                                 //
-    parser::Opt<message_body>>;
+    Status_Line, //
+    /*
+      parser::Repeat<parser::Concat<parser::Either<general_header,  //
+                                                   response_header, //
+                                                   entity_header>,
+                                    CRLF>>,
+    */
+    parser::Repeat<parser::Concat<message_header, CRLF>>, //
+    CRLF>;
 
+/*
 using request_header = parser::Either<Accept,              //
                                       Accept_Charset,      //
                                       Accept_Encoding,     //
@@ -202,8 +224,12 @@ using request_header = parser::Either<Accept,              //
                                       Referer,             //
                                       TE,                  //
                                       User_Agent>;
+*/
 
-using extension_method = token;
+struct extension_method_ {
+  using type = token;
+};
+using extension_method = parser::ForwardRef<extension_method_>;
 
 DEFINE_TOKEN(OPTIONS);
 DEFINE_TOKEN(GET);
@@ -214,16 +240,19 @@ DEFINE_TOKEN(DELETE);
 DEFINE_TOKEN(TRACE);
 DEFINE_TOKEN(CONNECT);
 
-using Method = parser::Either<OPTIONS, //
-                              GET,     //
-                              HEAD,    //
-                              POST,    //
-                              PUT,     //
-                              DELETE,  //
-                              TRACE,   //
-                              CONNECT, //
-                              extension_method>;
+using HttpMethod = parser::Either<OPTIONS, //
+                                  GET,     //
+                                  HEAD,    //
+                                  POST,    //
+                                  PUT,     //
+                                  DELETE,  //
+                                  TRACE,   //
+                                  CONNECT  //
+                                  >;
 
+using Method = parser::Either<HttpMethod, extension_method>;
+
+/*
 using general_header = parser::Either<Cache_Control,     //
                                       Connection,        //
                                       Date,              //
@@ -233,30 +262,41 @@ using general_header = parser::Either<Cache_Control,     //
                                       Upgrade,           //
                                       Via,               //
                                       Warning>;
+*/
+
+using abs_path = uri::grammar::abs_path;
+using authority = uri::grammar::authority;
 
 using Request_URI =
     parser::Either<parser::Literal<'*'>, absoluteURI, abs_path, authority>;
 
-using Request_Line = Concat<Method, SP, Request_URI, SP, HTTP_Version, CRLF>;
+using Request_Line =
+    parser::Concat<Method, SP, Request_URI, SP, HTTP_Version, CRLF>;
 
 using Request = parser::Concat<
-    Request_Line,                                                //
-    parser::Repeat<parser::Concat<parser::Either<general_header, //
-                                                 request_header, //
-                                                 entity_header>, //
-                                  CRLF>>,                        //
-    CRLF,                                                        //
-    parser::Opt<message_body>>;
+    Request_Line, //
+    /*
+      parser::Repeat<parser::Concat<parser::Either<general_header, //
+                                                   request_header, //
+                                                   entity_header>, //
+                                    CRLF>>,                        //
+    */
+    parser::Repeat<Glue<message_header, CRLF>>, //
+    CRLF>;
+
+/*
+using FullRequest = parser::Concat<Request, parser::Opt<message_body>>;
 
 using message_body =
     parser::Success; // This part of the grammar isn't context free
+*/
 
 using start_line = parser::Either<Request_Line, Status_Line>;
 
 using generic_message =
     parser::Concat<start_line,                                 //
                    parser::Repeat<Glue<message_header, CRLF>>, //
-                   CRLF, parser::Opt<message_body>>;
+                   CRLF>;
 
 using HTTP_message = parser::Either<Request, Response>;
 

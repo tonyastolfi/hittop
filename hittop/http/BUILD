@@ -7,6 +7,7 @@ cc_library(
     deps = [
         "//hittop/util:util",
         "//hittop/util:functional",
+        "//hittop/uri",
         "//hittop/parser",
         "@boost_1_62_0//:headers",
     ],
