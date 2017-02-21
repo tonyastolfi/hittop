@@ -8,6 +8,7 @@
 #include <iterator>
 #include <memory>
 #include <type_traits>
+#include <unordered_map>
 
 #include "hittop/util/demangle.h"
 #include "hittop/util/range_to_string.h"

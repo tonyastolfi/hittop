@@ -13,79 +13,28 @@
 
 #include "third_party/short_alloc/short_alloc.h"
 
-#include "hittop/util/saved_in_place_factory.h"
+#include "hittop/util/in_place_alloc_factory.h"
 
 namespace hittop {
 namespace uri {
 
 constexpr std::size_t DEFAULT_ARENA_SIZE = 4096;
 
-namespace internal {
-
-template <typename T, typename Allocator> struct TypedAllocFactoryBuilder {
-public:
-  explicit TypedAllocFactoryBuilder(typename Allocator::arena_type &arena)
-      : allocator_(arena) {}
-
-  template <typename... Args> auto in_place(Args &&... args) {
-    return util::SavedInPlace<T>(std::cref(std::forward<Args>(args))...,
-                                 allocator_);
-  }
-
-private:
-  Allocator allocator_;
-};
-
-template <typename Iterator, typename Allocator>
-class TypedAllocFactoryBuilder<boost::iterator_range<Iterator>, Allocator> {
-public:
-  explicit TypedAllocFactoryBuilder(typename Allocator::arena_type &) {}
-
-  template <typename... Args> auto in_place(Args &&... args) {
-    return boost::in_place<boost::iterator_range<Iterator>>(
-        std::forward<Args>(args)...);
-  }
-};
-
-template <typename Allocator>
-struct TypedAllocFactoryBuilder<std::string, Allocator> {
-public:
-  explicit TypedAllocFactoryBuilder(typename Allocator::arena_type &) {}
-
-  template <typename... Args> auto in_place(Args &&... args) {
-    return boost::in_place<std::string>(std::forward<Args>(args)...);
-  }
-};
-
-template <std::size_t kSize> class ArenaFactoryBuilder {
-public:
-  using Arena = ::short_alloc::arena<kSize>;
-  template <typename T> using Allocator = ::short_alloc::short_alloc<T, kSize>;
-
-  template <typename T, typename... Args> auto in_place(Args &&... args) {
-    TypedAllocFactoryBuilder<T, Allocator<T>> typed_builder(arena_);
-    return typed_builder.in_place(std::forward<Args>(args)...);
-  }
-
-private:
-  Arena arena_;
-};
-
-} // namespace internal
+template <typename T>
+using DefaultArenaAllocator = ::short_alloc::short_alloc<T, DEFAULT_ARENA_SIZE>;
 
 template <
     typename Range,
     typename SubRange =
         boost::iterator_range<decltype(std::cbegin(std::declval<Range>()))>,
-    typename SubRangeSequence = std::vector<
-        SubRange, ::short_alloc::short_alloc<SubRange, DEFAULT_ARENA_SIZE>>,
+    typename SubRangeSequence =
+        std::vector<SubRange, DefaultArenaAllocator<SubRange>>,
     typename SubRangeMap = std::unordered_map<
         SubRange, SubRange, std::hash<SubRange>, std::equal_to<SubRange>,
-        ::short_alloc::short_alloc<std::pair<const SubRange, SubRange>,
-                                   DEFAULT_ARENA_SIZE>>,
-    typename InPlaceFactoryBuilder =
-        internal::ArenaFactoryBuilder<DEFAULT_ARENA_SIZE>>
-class BasicUri {
+        DefaultArenaAllocator<std::pair<const SubRange, SubRange>>>,
+    typename InPlaceFactoryBuilder = util::InPlaceFactoryBuilder<
+        DefaultArenaAllocator,
+        std::tuple<::short_alloc::arena<DEFAULT_ARENA_SIZE>>> class BasicUri {
 public:
   using part_type = SubRange;
   using sequence_type = SubRangeSequence;

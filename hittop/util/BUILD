@@ -4,7 +4,6 @@ cc_library(
         "fallible.h",
         "load_file_as_string.h",
         "range_to_string.h",
-        "saved_in_place_factory.h",
         "scope_exit.h",
         "type_traits.h",
     ],
@@ -139,4 +138,36 @@ cc_library(
     deps = [
     ],
     visibility = ["//visibility:public"]
+)
+
+cc_library(
+    name="in_place_factory",
+    hdrs = [
+        "in_place_alloc_factory.h",
+        "saved_in_place_factory.h",
+    ],
+    srcs = [
+    ],
+    copts = ["-std=c++14"],
+    deps = [
+        "@boost_1_62_0//:headers",
+        ":tuples",
+    ],
+    visibility = ["//visibility:public"]
+)
+
+cc_test(
+    name = "in_place_factory-test",
+    srcs = [
+        "in_place_alloc_factory-test.cc",
+        "saved_in_place_factory-test.cc",
+    ],
+    copts = [
+        "-Iexternal/gtest/include",
+        "-std=c++14",
+    ],
+    deps = [
+        "@gtest//:main",
+        ":in_place_factory",
+    ],
 )

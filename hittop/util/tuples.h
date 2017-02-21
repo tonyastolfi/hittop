@@ -40,17 +40,31 @@ struct FindFirst<Predicate, std::tuple<>> {
 
 namespace internal {
 
-template <class F, class Tuple, std::size_t... I>
+template <typename F, class Tuple, std::size_t... I>
 constexpr decltype(auto) ApplyImpl(F &&f, Tuple &&t,
                                    std::index_sequence<I...>) {
   return std::forward<F>(f)(std::get<I>(t)...);
 }
 } // namespace internal
 
-template <class F, class Tuple>
+template <typename F, class Tuple>
 constexpr decltype(auto) Apply(F &&f, Tuple &&t) {
   return internal::ApplyImpl(
       std::forward<F>(f), std::forward<Tuple>(t),
+      std::make_index_sequence<std::tuple_size<std::decay_t<Tuple>>::value>{});
+}
+
+namespace internal {
+
+template <typename T, class Tuple, std::size_t... I>
+constexpr decltype(auto) MakeImpl(Tuple &&t, std::index_sequence<I...>) {
+  return T(std::get<I>(t)...);
+}
+} // namespace internal
+
+template <typename T, class Tuple> constexpr decltype(auto) Make(Tuple &&t) {
+  return internal::MakeImpl<T>(
+      std::forward<Tuple>(t),
       std::make_index_sequence<std::tuple_size<std::decay_t<Tuple>>::value>{});
 }
 

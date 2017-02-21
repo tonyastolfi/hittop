@@ -30,3 +30,27 @@ cc_test(
         "//hittop/util",
     ],
 )
+
+cc_test(
+    name = "parse-test",
+    srcs = [
+        "parse-test.cc",
+    ],
+    data = [
+        ":chrome_request.bin",
+        ":curl_request.bin",
+        ":google_response.bin",
+    ],
+    copts = [
+        "-Iexternal/gtest/include",
+        "-std=c++14",
+    ],
+    deps = [
+        "@gtest//:main",
+        ":http",
+        "//hittop/parser",
+        "//hittop/util",
+        "//hittop/util:functional",
+        "//hittop/util:test_util",
+    ],
+)

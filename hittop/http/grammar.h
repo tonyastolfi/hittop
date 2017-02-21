@@ -78,7 +78,8 @@ using token = parser::AtLeast<
 
 // Define a helper template for "implied *LWS" (RFC 2616, section 2.2, page 15)
 //
-template <typename... Parts> using Glue = parser::ImpliedDelim<LWS, Parts...>;
+template <typename... Parts>
+using Glue = parser::ImpliedDelim<parser::Repeat<LWS>, Parts...>;
 
 /* The definition of field-content (RFC/2616, section 4.2, page 32) strikes me
  * as particularly vague:
@@ -94,13 +95,22 @@ using field_content = parser::Either<
     parser::Repeat<TEXT>,
     parser::Repeat<parser::Either<token, separators, quoted_string>>>;
 
-using field_value = parser::Repeat<parser::Either<field_content, LWS>>;
+struct field_value_ {
+  using type = parser::Repeat<parser::Either<field_content, LWS>>;
+};
+using field_value = parser::ForwardRef<field_value_>;
 
-using field_name = token;
+struct field_name_ {
+  using type = token;
+};
+using field_name = parser::ForwardRef<field_name_>;
 
-using message_header =
-    Glue<field_name, parser::Literal<':'>, parser::Opt<field_value>>;
+struct message_header_ {
+  using type = Glue<field_name, parser::Literal<':'>, parser::Opt<field_value>>;
+};
+using message_header = parser::ForwardRef<message_header_>;
 
+/*
 namespace tokens {
 
 DEFINE_NAMED_TOKEN(Cache_Control, "Cache-Control");
@@ -121,12 +131,11 @@ DEFINE_NAMED_TOKEN(Via, "Via");
 DEFINE_NAMED_TOKEN(Warning, "Warning");
 
 } // namespace tokens
+*/
 
 using entity_body = parser::Repeat<OCTET>;
 
-using message_header =
-    Glue<field_name, parser::Literal<':'>, parser::Opt<field_value>>;
-
+/*
 using Content_Encoding =
     Glue<tokens::Content_Encoding, parser::Literal<':'>, field_value>;
 
@@ -135,14 +144,15 @@ using Content_Language =
 
 using Content_Length = Glue<tokens::Content_Length, parser::Literal<':'>,
                             parser::AtLeast<1, DIGIT>>;
+*/
 
 using absoluteURI = uri::grammar::absoluteURI;
 using relativeURI = uri::grammar::relativeURI;
 
+/*
 using Content_Location = Glue<tokens::Content_Location, parser::Literal<':'>,
                               parser::Either<absoluteURI, relativeURI>>;
 
-/*
 using extension_header = message_header;
 
 using entity_header = parser::Either<Allow,            //
@@ -299,6 +309,55 @@ using generic_message =
                    CRLF>;
 
 using HTTP_message = parser::Either<Request, Response>;
+
+template <typename Map> void RegisterRuleNames(Map &names) {
+  REGISTER_PARSE_RULE(OCTET);
+  REGISTER_PARSE_RULE(DIGIT);
+  REGISTER_PARSE_RULE(SP);
+  REGISTER_PARSE_RULE(CRLF);
+  REGISTER_PARSE_RULE(LWS);
+  REGISTER_PARSE_RULE(separators);
+  REGISTER_PARSE_RULE(CTLs);
+  REGISTER_PARSE_RULE(TEXT);
+  REGISTER_PARSE_RULE(quoted_pair);
+  REGISTER_PARSE_RULE(ctext);
+  REGISTER_PARSE_RULE(comment);
+  REGISTER_PARSE_RULE(qdtext);
+  REGISTER_PARSE_RULE(quoted_string);
+  REGISTER_PARSE_RULE(token);
+  REGISTER_PARSE_RULE(field_content);
+  REGISTER_PARSE_RULE(field_value);
+  REGISTER_PARSE_RULE(field_name);
+  REGISTER_PARSE_RULE(message_header);
+  REGISTER_PARSE_RULE(entity_body);
+  REGISTER_PARSE_RULE(absoluteURI);
+  REGISTER_PARSE_RULE(relativeURI);
+  REGISTER_PARSE_RULE(Reason_Phrase);
+  REGISTER_PARSE_RULE(HTTP_slash);
+  REGISTER_PARSE_RULE(HTTP_Version);
+  REGISTER_PARSE_RULE(Status_Code);
+  REGISTER_PARSE_RULE(Status_Line);
+  REGISTER_PARSE_RULE(Response);
+  REGISTER_PARSE_RULE(extension_method);
+  REGISTER_PARSE_RULE(OPTIONS);
+  REGISTER_PARSE_RULE(GET);
+  REGISTER_PARSE_RULE(HEAD);
+  REGISTER_PARSE_RULE(POST);
+  REGISTER_PARSE_RULE(PUT);
+  REGISTER_PARSE_RULE(DELETE);
+  REGISTER_PARSE_RULE(TRACE);
+  REGISTER_PARSE_RULE(CONNECT);
+  REGISTER_PARSE_RULE(HttpMethod);
+  REGISTER_PARSE_RULE(Method);
+  REGISTER_PARSE_RULE(abs_path);
+  REGISTER_PARSE_RULE(authority);
+  REGISTER_PARSE_RULE(Request_URI);
+  REGISTER_PARSE_RULE(Request_Line);
+  REGISTER_PARSE_RULE(Request);
+  REGISTER_PARSE_RULE(start_line);
+  REGISTER_PARSE_RULE(generic_message);
+  REGISTER_PARSE_RULE(HTTP_message);
+}
 
 } // namespace grammar
 } // namespace http
