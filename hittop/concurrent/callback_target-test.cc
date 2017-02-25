@@ -87,12 +87,13 @@ struct Foo : hittop::concurrent::CallbackTarget<Foo> {
   }
 };
 
-} // namespace
-
-TEST(CallbackTargetTest, OneShotZeroArgs) {
+class CallbackTargetTest : public ::testing::Test {
+protected:
   boost::asio::io_service io;
-  boost::intrusive_ptr<Foo> foo = new Foo(io);
+  boost::intrusive_ptr<Foo> foo{new Foo(io)};
+};
 
+TEST_F(CallbackTargetTest, OneShotZeroArgs) {
   EXPECT_EQ(foo->use_count(), 1);
 
   std::function<void()> cb = foo->OneShotCallback(&Foo::ZeroArgs);
@@ -115,10 +116,7 @@ TEST(CallbackTargetTest, OneShotZeroArgs) {
   EXPECT_EQ(*foo->called_with, 0UL);
 }
 
-TEST(CallbackTargetTest, ListenerZeroArgs) {
-  boost::asio::io_service io;
-  boost::intrusive_ptr<Foo> foo = new Foo(io);
-
+TEST_F(CallbackTargetTest, ListenerZeroArgs) {
   EXPECT_EQ(foo->use_count(), 1);
 
   std::function<void()> cb = foo->ListenerCallback(&Foo::ZeroArgs);
@@ -144,9 +142,7 @@ TEST(CallbackTargetTest, ListenerZeroArgs) {
   EXPECT_EQ(*foo->called_with, 0U);
 }
 
-TEST(CallbackTargetTest, OneShotZeroArgsDispatchNow) {
-  boost::asio::io_service io;
-  boost::intrusive_ptr<Foo> foo = new Foo(io);
+TEST_F(CallbackTargetTest, OneShotZeroArgsDispatchNow) {
   auto cb = foo->OneShotCallback(&Foo::ZeroArgs);
 
   EXPECT_FALSE(foo->called_with);
@@ -165,9 +161,7 @@ TEST(CallbackTargetTest, OneShotZeroArgsDispatchNow) {
   EXPECT_TRUE(success);
 }
 
-TEST(CallbackTargetTest, OneShotZeroArgsDispatchLater) {
-  boost::asio::io_service io;
-  boost::intrusive_ptr<Foo> foo = new Foo(io);
+TEST_F(CallbackTargetTest, OneShotZeroArgsDispatchLater) {
   auto cb = foo->OneShotCallback(&Foo::ZeroArgs);
 
   EXPECT_FALSE(foo->called_with);
@@ -202,9 +196,7 @@ TEST(CallbackTargetTest, OneShotZeroArgsDispatchLater) {
   EXPECT_TRUE(success);
 }
 
-TEST(CallbackTargetTest, OneShotLaterZeroArgs) {
-  boost::asio::io_service io;
-  boost::intrusive_ptr<Foo> foo = new Foo(io);
+TEST_F(CallbackTargetTest, OneShotLaterZeroArgs) {
   auto cb = foo->OneShotCallbackLater(&Foo::ZeroArgs);
 
   EXPECT_FALSE(foo->called_with);
@@ -225,9 +217,9 @@ TEST(CallbackTargetTest, OneShotLaterZeroArgs) {
   EXPECT_TRUE(bool{foo->called_with});
 }
 
-TEST(CallbackTargetTest, OneShotZeroArgsPost) {}
+TEST_F(CallbackTargetTest, OneShotZeroArgsPost) {}
 
-TEST(CallbackTargetTest, Lambdas) {
+TEST(CallbackTargetSanity, Lambdas) {
   std::function<std::string()> f;
   {
     std::string s = "hello";
@@ -237,3 +229,5 @@ TEST(CallbackTargetTest, Lambdas) {
   }
   EXPECT_EQ(f(), "hello");
 }
+
+} // namespace
