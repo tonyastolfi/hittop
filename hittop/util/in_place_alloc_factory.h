@@ -4,6 +4,7 @@
 #ifndef HITTOP_UTIL_IN_PLACE_ALLOC_FACTORY_H
 #define HITTOP_UTIL_IN_PLACE_ALLOC_FACTORY_H
 
+#include <functional>
 #include <string>
 #include <type_traits>
 
@@ -16,11 +17,8 @@ namespace hittop {
 namespace util {
 
 namespace internal {
-template <template <typename> class Alloc, typename AllocArgsTuple>
-class InPlaceFactoryBuilderBase {
+template <typename AllocArgsTuple> class InPlaceFactoryBuilderBase {
 public:
-  template <typename T> using Allocator = Alloc<T>;
-
   template <typename... A>
   explicit InPlaceFactoryBuilderBase(A &&... a)
       : alloc_args_(std::forward<A>(a)...) {}
@@ -28,62 +26,78 @@ public:
 protected:
   AllocArgsTuple alloc_args_;
 };
+
+template <typename T> struct HasAllocatorType {
+private:
+  template <typename U>
+  static std::true_type Impl(typename U::allocator_type *);
+
+  template <typename U> static std::false_type Impl(...);
+
+public:
+  using type = decltype(Impl<T>(nullptr));
+  static const std::size_t value = type::value;
+};
+
+template <typename T, typename AllocArgsTuple,
+          bool HasAlloc = HasAllocatorType<T>::value>
+struct TakesAllocator {
+  template <typename... Args> struct WithArgs {
+    static const bool value =
+        std::is_constructible<T, Args...,
+                              typename T::allocator_type &&>::value &&
+        util::tuples::IsMakeable<typename T::allocator_type,
+                                 AllocArgsTuple>::value;
+    using type = std::integral_constant<bool, value>;
+  };
+};
+
+template <typename T, typename AllocArgsTuple>
+struct TakesAllocator<T, AllocArgsTuple, false> {
+  template <typename... Args> using WithArgs = std::false_type;
+};
+
+template <typename T, typename AllocArgsTuple, typename... Args,
+          typename = std::enable_if_t<TakesAllocator<
+              T, AllocArgsTuple &&>::template WithArgs<Args...>::value>>
+auto InPlaceImpl(AllocArgsTuple &&alloc_args, Args &&... args) {
+  return util::SavedInPlace<T>(
+      std::cref(args)..., tuples::Make<typename T::allocator_type>(alloc_args));
+}
+
+template <typename T, typename AllocArgsTuple, typename... Args,
+          typename = std::enable_if_t<!TakesAllocator<
+              T, AllocArgsTuple>::template WithArgs<Args...>::value>,
+          typename = void>
+auto InPlaceImpl(AllocArgsTuple &&, Args &&... args) {
+  return boost::in_place(args...);
+}
+
 } // internal
 
-template <typename T, template <typename> class Alloc, typename AllocArgsTuple>
+template <typename T, typename AllocArgsTuple>
 struct TypedAllocFactoryBuilder
-    : public internal::InPlaceFactoryBuilderBase<Alloc, AllocArgsTuple> {
+    : public internal::InPlaceFactoryBuilderBase<AllocArgsTuple> {
 public:
   using internal::InPlaceFactoryBuilderBase<
-      Alloc, AllocArgsTuple>::InPlaceFactoryBuilderBase;
+      AllocArgsTuple>::InPlaceFactoryBuilderBase;
 
   template <typename... Args> auto in_place(Args &&... args) {
-    return util::SavedInPlace<T>(std::cref(std::forward<Args>(args))...,
-                                 tuples::Make<Alloc<T>>(this->alloc_args_));
+    return internal::InPlaceImpl<T>(this->alloc_args_,
+                                    std::forward<Args>(args)...);
   }
 };
 
-template <typename Iterator, template <typename> class Alloc,
-          typename AllocArgsTuple>
-class TypedAllocFactoryBuilder<boost::iterator_range<Iterator>, Alloc,
-                               AllocArgsTuple>
-    : public internal::InPlaceFactoryBuilderBase<Alloc, AllocArgsTuple> {
+template <typename AllocArgsTuple>
+class AllocFactoryBuilder
+    : public internal::InPlaceFactoryBuilderBase<AllocArgsTuple> {
 public:
   using internal::InPlaceFactoryBuilderBase<
-      Alloc, AllocArgsTuple>::InPlaceFactoryBuilderBase;
-
-  template <typename... Args> auto in_place(Args &&... args) {
-    return boost::in_place<boost::iterator_range<Iterator>>(
-        std::forward<Args>(args)...);
-  }
-};
-
-template <template <typename> class Alloc, typename AllocArgsTuple>
-struct TypedAllocFactoryBuilder<std::string, Alloc, AllocArgsTuple>
-    : public internal::InPlaceFactoryBuilderBase<Alloc, AllocArgsTuple> {
-public:
-  using internal::InPlaceFactoryBuilderBase<
-      Alloc, AllocArgsTuple>::InPlaceFactoryBuilderBase;
-
-  template <typename... Args> auto in_place(Args &&... args) {
-    return boost::in_place<std::string>(std::forward<Args>(args)...);
-  }
-};
-
-template <template <typename> class Alloc, typename AllocArgsTuple>
-class InPlaceFactoryBuilder
-    : public internal::InPlaceFactoryBuilderBase<Alloc, AllocArgsTuple> {
-public:
-  using internal::InPlaceFactoryBuilderBase<
-      Alloc, AllocArgsTuple>::InPlaceFactoryBuilderBase;
+      AllocArgsTuple>::InPlaceFactoryBuilderBase;
 
   template <typename T, typename... Args> auto in_place(Args &&... args) {
-    using AllocArgsTupleRef =
-        typename std::add_lvalue_reference<AllocArgsTuple>::type;
-
-    TypedAllocFactoryBuilder<T, Alloc, AllocArgsTupleRef> typed_builder(
-        this->alloc_args_);
-    return typed_builder.in_place(std::forward<Args>(args)...);
+    return internal::InPlaceImpl<T>(this->alloc_args_,
+                                    std::forward<Args>(args)...);
   }
 };
 

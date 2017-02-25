@@ -2,6 +2,7 @@
 #define HITTOP_URI_BASIC_URI_H
 
 #include <iterator>
+#include <tuple>
 #include <type_traits>
 #include <unordered_map>
 #include <utility>
@@ -23,18 +24,17 @@ constexpr std::size_t DEFAULT_ARENA_SIZE = 4096;
 template <typename T>
 using DefaultArenaAllocator = ::short_alloc::short_alloc<T, DEFAULT_ARENA_SIZE>;
 
-template <
-    typename Range,
-    typename SubRange =
-        boost::iterator_range<decltype(std::cbegin(std::declval<Range>()))>,
-    typename SubRangeSequence =
-        std::vector<SubRange, DefaultArenaAllocator<SubRange>>,
-    typename SubRangeMap = std::unordered_map<
-        SubRange, SubRange, std::hash<SubRange>, std::equal_to<SubRange>,
-        DefaultArenaAllocator<std::pair<const SubRange, SubRange>>>,
-    typename InPlaceFactoryBuilder = util::InPlaceFactoryBuilder<
-        DefaultArenaAllocator,
-        std::tuple<::short_alloc::arena<DEFAULT_ARENA_SIZE>>> class BasicUri {
+template <typename Range, //
+          typename SubRange = boost::iterator_range<decltype(
+              std::cbegin(std::declval<Range>()))>,
+          typename SubRangeSequence =
+              std::vector<SubRange, DefaultArenaAllocator<SubRange>>,
+          typename SubRangeMap = std::unordered_map<
+              SubRange, SubRange, std::hash<SubRange>, std::equal_to<SubRange>,
+              DefaultArenaAllocator<std::pair<const SubRange, SubRange>>>,
+          typename InPlaceFactoryBuilder = util::AllocFactoryBuilder<
+              std::tuple<::short_alloc::arena<DEFAULT_ARENA_SIZE>>>>
+class BasicUri {
 public:
   using part_type = SubRange;
   using sequence_type = SubRangeSequence;

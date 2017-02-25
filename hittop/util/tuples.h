@@ -40,14 +40,14 @@ struct FindFirst<Predicate, std::tuple<>> {
 
 namespace internal {
 
-template <typename F, class Tuple, std::size_t... I>
+template <typename F, typename Tuple, std::size_t... I>
 constexpr decltype(auto) ApplyImpl(F &&f, Tuple &&t,
                                    std::index_sequence<I...>) {
   return std::forward<F>(f)(std::get<I>(t)...);
 }
 } // namespace internal
 
-template <typename F, class Tuple>
+template <typename F, typename Tuple>
 constexpr decltype(auto) Apply(F &&f, Tuple &&t) {
   return internal::ApplyImpl(
       std::forward<F>(f), std::forward<Tuple>(t),
@@ -56,17 +56,33 @@ constexpr decltype(auto) Apply(F &&f, Tuple &&t) {
 
 namespace internal {
 
-template <typename T, class Tuple, std::size_t... I>
+template <typename T, typename Tuple, std::size_t... I>
 constexpr decltype(auto) MakeImpl(Tuple &&t, std::index_sequence<I...>) {
   return T(std::get<I>(t)...);
 }
 } // namespace internal
 
-template <typename T, class Tuple> constexpr decltype(auto) Make(Tuple &&t) {
+template <typename T, typename Tuple> constexpr decltype(auto) Make(Tuple &&t) {
   return internal::MakeImpl<T>(
       std::forward<Tuple>(t),
       std::make_index_sequence<std::tuple_size<std::decay_t<Tuple>>::value>{});
 }
+
+namespace internal {
+
+template <typename T, typename Tuple, typename Seq> struct IsMakeableImpl;
+
+template <typename T, typename Tuple, std::size_t... I>
+struct IsMakeableImpl<T, Tuple, std::index_sequence<I...>>
+    : std::is_constructible<T,
+                            decltype(std::get<I>(std::declval<Tuple>()))...> {};
+} // namespace internal
+
+template <typename T, typename Tuple>
+struct IsMakeable
+    : internal::IsMakeableImpl<
+          T, Tuple, std::make_index_sequence<
+                        std::tuple_size<std::decay_t<Tuple>>::value>> {};
 
 } // namespace tuples
 } // namespace util

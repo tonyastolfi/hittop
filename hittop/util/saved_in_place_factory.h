@@ -2,6 +2,7 @@
 #define HITTOP_UTIL_SAVED_IN_PLACE_FACTORY_H
 
 #include <cstddef>
+#include <functional>
 #include <tuple>
 #include <type_traits>
 
@@ -11,9 +12,21 @@
 namespace hittop {
 namespace util {
 
+namespace internal {
+
+template <typename T> struct NaturalDecay {
+  using type = typename std::decay<T>::type;
+};
+
+template <typename T> struct NaturalDecay<std::reference_wrapper<T>> {
+  using type = T &;
+};
+
+} // internal
+
 template <typename T, typename... Args>
 class SavedTypedInPlaceFactory : public boost::typed_in_place_factory_base {
-  using Tuple = std::tuple<typename std::decay<Args>::type...>;
+  using Tuple = std::tuple<typename internal::NaturalDecay<Args>::type...>;
 
 public:
   explicit SavedTypedInPlaceFactory(Args &&... args)

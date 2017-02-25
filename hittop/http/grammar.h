@@ -187,9 +187,18 @@ using Reason_Phrase =
 //
 DEFINE_NAMED_TOKEN(HTTP_slash, "HTTP/");
 
-using HTTP_Version =
-    parser::Concat<HTTP_slash, parser::AtLeast<1, DIGIT>, parser::Literal<'.'>,
-                   parser::AtLeast<1, DIGIT>>;
+struct HTTP_major_version_ {
+  using type = parser::AtLeast<1, DIGIT>;
+};
+using HTTP_major_version = parser::ForwardRef<HTTP_major_version_>;
+
+struct HTTP_minor_version_ {
+  using type = parser::AtLeast<1, DIGIT>;
+};
+using HTTP_minor_version = parser::ForwardRef<HTTP_minor_version_>;
+
+using HTTP_Version = parser::Concat<HTTP_slash, HTTP_major_version,
+                                    parser::Literal<'.'>, HTTP_minor_version>;
 
 /*
 using extension_code = parser::Exactly<3, DIGIT>;
