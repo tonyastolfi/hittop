@@ -148,7 +148,7 @@ TEST_F(CallbackTargetTest, OneShotZeroArgsDispatchNow) {
   EXPECT_FALSE(foo->called_with);
 
   bool success = false;
-  foo->get_strand().post([&cb, foo, &success]() {
+  foo->get_strand().post([&cb, foo = this->foo, &success ]() {
     cb();
     success = bool{foo->called_with};
   });
@@ -174,11 +174,13 @@ TEST_F(CallbackTargetTest, OneShotZeroArgsDispatchLater) {
     ok_to_release.get_future().get();
   });
 
-  std::thread helper([&io]() { io.run(); });
+  std::thread helper([this]() { io.run(); });
 
   bool ran = false;
   bool success = false;
-  io.post([&cb, foo, &ran, &success, &inside_strand, &ok_to_release]() {
+  io.post([
+    &cb, foo = this->foo, &ran, &success, &inside_strand, &ok_to_release
+  ]() {
     ran = true;
     inside_strand.get_future().get();
     cb();
@@ -202,7 +204,7 @@ TEST_F(CallbackTargetTest, OneShotLaterZeroArgs) {
   EXPECT_FALSE(foo->called_with);
 
   bool success = false;
-  foo->get_strand().post([&cb, foo, &success]() {
+  foo->get_strand().post([&cb, foo = this->foo, &success ]() {
     cb();
     success = !foo->called_with;
   });

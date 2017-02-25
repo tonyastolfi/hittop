@@ -15,6 +15,19 @@
 namespace hittop {
 namespace concurrent {
 
+template <typename OwningPointer, typename MemFun, typename RawPointer,
+          typename... Args>
+auto MakeCallbackTask(OwningPointer &&obj_arg, MemFun &&fn_arg, RawPointer *ptr,
+                      Args &&... args) {
+  return [
+    obj = std::forward<OwningPointer>(obj_arg),
+    fn = std::forward<MemFun>(fn_arg),
+    arg_pack = std::make_tuple(ptr, std::forward<Args>(args)...)
+  ]() {
+    return util::tuples::Apply(std::mem_fn(fn), std::move(arg_pack));
+  };
+}
+
 struct PostScheduler {
   template <typename Task>
   static void schedule(boost::asio::io_service::strand &strand, Task &&task) {
@@ -36,10 +49,9 @@ public:
       : obj_(std::move(obj)), fn_(fn) {}
 
   template <typename... Args> void operator()(Args &&... args) const {
-    Scheduler::schedule(obj_->get_strand(), [
-      obj = obj_, fn = fn_,
-      arg_pack = std::make_tuple(obj_.get(), std::forward<Args>(args)...)
-    ]() { return util::tuples::Apply(std::mem_fn(fn), std::move(arg_pack)); });
+    Scheduler::schedule(
+        obj_->get_strand(),
+        MakeCallbackTask(obj_, fn_, obj_.get(), std::forward<Args>(args)...));
   }
 
 private:
@@ -57,10 +69,10 @@ public:
     assert(obj_);
     auto bound_obj = obj_;
     auto local_obj = std::move(obj_);
-    Scheduler::schedule(local_obj->get_strand(), [
-      obj = std::move(bound_obj), fn = fn_,
-      arg_pack = std::make_tuple(local_obj.get(), std::forward<Args>(args)...)
-    ]() { return util::tuples::Apply(std::mem_fn(fn), std::move(arg_pack)); });
+    Scheduler::schedule(local_obj->get_strand(),
+                        MakeCallbackTask(std::move(bound_obj), fn_,
+                                         local_obj.get(),
+                                         std::forward<Args>(args)...));
   }
 
 private:
