@@ -38,7 +38,7 @@ public:
   template <typename Range, typename... Args>
   auto operator()(const Range &input, Args &&... args) const
       -> Fallible<decltype(std::begin(input))> {
-    auto first_result = Parse<First>(input, std::forward<Args>(args)...);
+    auto first_result = Parse<First>(input, args...);
     if (first_result.error()) {
       return first_result;
     } else {

@@ -21,8 +21,8 @@ public:
     const auto last = std::end(input);
     auto next = std::begin(input);
     for (;;) {
-      auto result = Parse<Grammar>(boost::make_iterator_range(next, last),
-                                   std::forward<Args>(args)...);
+      auto result =
+          Parse<Grammar>(boost::make_iterator_range(next, last), args...);
       if (result.error()) {
         // INCOMPLETE is a special case; we always want to pass it through since
         //  it is uncertain whether the parse would have been successful on this

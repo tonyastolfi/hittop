@@ -1,6 +1,8 @@
 #ifndef HITTOP_UTIL_FIRST_MATCH_H
 #define HITTOP_UTIL_FIRST_MATCH_H
 
+#include <type_traits>
+
 #include "hittop/util/is_callable.h"
 #include "hittop/util/tuples.h"
 
@@ -65,7 +67,11 @@ public:
 #undef HITTOP_UTIL_FIRST_MATCH_EXPR
 };
 
-template <typename... F> FirstMatchFunctor<F...> FirstMatch(F &&... f) {
+template <typename... F> auto FirstMatch(F &&... f) {
+  return FirstMatchFunctor<std::decay_t<F>...>(std::forward<F>(f)...);
+}
+
+template <typename... F> auto FirstMatchRef(F &&... f) {
   return FirstMatchFunctor<F...>(std::forward<F>(f)...);
 }
 

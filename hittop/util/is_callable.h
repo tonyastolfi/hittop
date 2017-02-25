@@ -11,7 +11,7 @@ template <typename T, typename... Args> struct IsCallable {
 private:
   template <typename F>
   static std::true_type Impl(decltype(
-      std::declval<F>()(std::forward<Args>(std::declval<Args &&>())...)) *);
+      std::declval<F>()(std::forward<Args>(std::declval<Args>())...)) *);
 
   template <typename F> static std::false_type Impl(...);
 

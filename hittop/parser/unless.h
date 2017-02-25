@@ -17,8 +17,7 @@ public:
   template <typename Range, typename... Args>
   auto operator()(const Range &input, Args &&... args) const
       -> Fallible<decltype(std::begin(input))> {
-    auto reject_result =
-        Parse<RejectGrammar>(input, std::forward<Args>(args)...);
+    auto reject_result = Parse<RejectGrammar>(input, args...);
     if (reject_result.error() == ParseError::INCOMPLETE) {
       return reject_result;
     }
