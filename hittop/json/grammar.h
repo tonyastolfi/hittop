@@ -1,7 +1,7 @@
 // Translation of the JavaScript Object Notation grammar from http://json.org.
 //
-#ifndef HITTOP_PARSER_JSON_ORG_H
-#define HITTOP_PARSER_JSON_ORG_H
+#ifndef HITTOP_JSON_GRAMMAR_H
+#define HITTOP_JSON_GRAMMAR_H
 
 #include <cctype>
 
@@ -21,8 +21,10 @@
 #include "hittop/parser/unless.h"
 
 namespace hittop {
-namespace parser {
-namespace json_org {
+namespace json {
+namespace grammar {
+
+using namespace ::hittop::parser;
 
 using digit = CharFilter<std::isdigit>;
 
@@ -36,24 +38,26 @@ struct Value_;
 
 using Value = ForwardRef<Value_>;
 
-using String =                                                              //
-    Trim<                                                                   //
-        Concat<                                                             //
-            Literal<'"'>,                                                   //
-            Repeat<Either<                                                  //
-                Unless<Either<Literal<'"'>, Literal<'\\'>, control_char>,   //
-                       AnyChar>,                                            //
-                Concat<Literal<'\\'>,                                       //
-                       Either<                                              //
-                           Literal<'"'>,                                    //
-                           Literal<'\\'>,                                   //
-                           Literal<'/'>,                                    //
-                           Literal<'b'>,                                    //
-                           Literal<'f'>,                                    //
-                           Literal<'n'>,                                    //
-                           Literal<'r'>,                                    //
-                           Literal<'t'>,                                    //
-                           Concat<Literal<'u'>, Exactly<4, hex_digit>>>>>>, //
+using StringContents = Repeat<Either<                         //
+    Unless<Either<Literal<'"'>, Literal<'\\'>, control_char>, //
+           AnyChar>,                                          //
+    Concat<Literal<'\\'>,                                     //
+           Either<                                            //
+               Literal<'"'>,                                  //
+               Literal<'\\'>,                                 //
+               Literal<'/'>,                                  //
+               Literal<'b'>,                                  //
+               Literal<'f'>,                                  //
+               Literal<'n'>,                                  //
+               Literal<'r'>,                                  //
+               Literal<'t'>,                                  //
+               Concat<Literal<'u'>, Exactly<4, hex_digit>>>>>>;
+
+using String =              //
+    Trim<                   //
+        Concat<             //
+            Literal<'"'>,   //
+            StringContents, //
             Literal<'"'>>>;
 
 using Number =                                               //
@@ -77,6 +81,8 @@ DEFINE_NAMED_TOKEN(False, "false");
 DEFINE_NAMED_TOKEN(Null, "null");
 
 } // namespace token
+
+using Null = tokens::Null;
 
 using Property = Concat<Trim<String>, Literal<':'>, Trim<Value>>;
 
@@ -103,11 +109,11 @@ struct Value_ {
       Object,          //
       Array,           //
       Boolean,         //
-      tokens::Null>;
+      Null>;
 };
 
-} // namespace parser
-} // namespace parser
+} // grammar
+} // namespace json
 } // namespace hittop
 
-#endif // HITTOP_PARSER_JSON_ORG_H
+#endif // HITTOP_JSON_GRAMMAR_H

@@ -11,19 +11,18 @@ namespace parser {
 // Star operator; repeat the specified grammar greedily as many times as
 // possible.  Will always succeed (because parsing 0 times is a valid result)
 // or ask for more input, but is not guaranteed to make progress.
-template <typename Grammar>
-struct Repeat {};
+template <typename Grammar> struct Repeat {};
 
-template <typename Grammar>
-class Parser<Repeat<Grammar>> {
+template <typename Grammar> class Parser<Repeat<Grammar>> {
 public:
-  template <typename Range>
-  auto operator()(const Range &input) const
+  template <typename Range, typename... Args>
+  auto operator()(const Range &input, Args &&... args) const
       -> Fallible<decltype(std::begin(input))> {
     const auto last = std::end(input);
     auto next = std::begin(input);
     for (;;) {
-      auto result = Parse<Grammar>(boost::make_iterator_range(next, last));
+      auto result =
+          Parse<Grammar>(boost::make_iterator_range(next, last), args...);
       if (result.error()) {
         // INCOMPLETE is a special case; we always want to pass it through since
         //  it is uncertain whether the parse would have been successful on this

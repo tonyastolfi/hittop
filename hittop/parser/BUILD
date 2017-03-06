@@ -9,10 +9,10 @@ cc_library(
         "concat.h",
         "either.h",
         "exactly.h",
+        "failure.h",
         "forward_ref.h",
         "force.h",
         "inter.h",
-        "json_org.h",
         "literal.h",
         "opt.h",
         "parse_error.h",
@@ -25,6 +25,8 @@ cc_library(
     ],
     copts = ["-std=c++14"],
     deps = [
+        "//hittop/util:util",
+        "//hittop/util:functional",
         "@boost_1_62_0//:headers",
     ],
     visibility = ["//visibility:public"]
@@ -41,6 +43,7 @@ cc_test(
         "concat-test.cc",
         "either-test.cc",
         "exactly-test.cc",
+        "failure-test.cc",
         "forward_ref-test.cc",
         "force-test.cc",
         "inter-test.cc",
@@ -62,24 +65,4 @@ cc_test(
         ":parser",
         "//hittop/util",
     ],
-)
-
-cc_test(
-    name = "json_org-test",
-    srcs = [
-        "json_org-test.cc",
-    ],
-    data = [
-        ":json_org-test-data.json"
-    ],
-    copts = [
-        "-Iexternal/gtest/include",
-        "-std=c++14",
-    ],
-    deps = [
-        "@gtest//:main",
-        ":parser",
-        "//hittop/util:util",
-        "//hittop/util:test_util",
-   ],
 )

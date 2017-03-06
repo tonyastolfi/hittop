@@ -1,4 +1,4 @@
-// DESCRIPTION
+// Consumes no input, always succeeds
 //
 #ifndef HITTOP_PARSER_SUCCESS_H
 #define HITTOP_PARSER_SUCCESS_H
@@ -15,8 +15,8 @@ struct Success {};
 // Always succeed, consuming no input.
 template <> class Parser<Success> {
 public:
-  template <typename Range>
-  auto operator()(const Range &input) const
+  template <typename Range, typename... Args>
+  auto operator()(const Range &input, Args &&...) const
       -> Fallible<decltype(std::begin(input))> {
     return std::begin(input);
   }

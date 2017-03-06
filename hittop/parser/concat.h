@@ -35,16 +35,17 @@ class Parser<Concat<First, Rest...>>
 /// Concatenate two grammars; the substantive case of Parse<Concat<...>>.
 template <typename First, typename Second> class Parser<Concat<First, Second>> {
 public:
-  template <typename Range>
-  auto operator()(const Range &input) const
+  template <typename Range, typename... Args>
+  auto operator()(const Range &input, Args &&... args) const
       -> Fallible<decltype(std::begin(input))> {
-    auto first_result = Parse<First>(input);
+    auto first_result = Parse<First>(input, args...);
     if (first_result.error()) {
       return first_result;
     } else {
       auto remaining_input =
           boost::make_iterator_range(first_result.get(), std::end(input));
-      return Parse<Second>(std::move(remaining_input));
+      return Parse<Second>(std::move(remaining_input),
+                           std::forward<Args>(args)...);
     }
   }
 };

@@ -3,16 +3,16 @@
 #ifndef HITTOP_PARSER_EITHER_H
 #define HITTOP_PARSER_EITHER_H
 
+#include "hittop/parser/failure.h"
 #include "hittop/parser/parser.h"
-#include "hittop/parser/success.h"
 
 namespace hittop {
 namespace parser {
 
 template <typename... Grammars> struct Either {};
 
-// Empty disjunction is just success.
-template <> class Parser<Either<>> : public Parser<Success> {};
+// Empty disjunction is just failure.
+template <> class Parser<Either<>> : public Parser<Failure> {};
 
 // Singleton disjunction is equivalent to the single grammar.
 template <typename Grammar>
@@ -22,15 +22,15 @@ class Parser<Either<Grammar>> : public Parser<Grammar> {};
 //  work here.
 template <typename First, typename Second> class Parser<Either<First, Second>> {
 public:
-  template <typename Range>
-  auto operator()(const Range &input) const
+  template <typename Range, typename... Args>
+  auto operator()(const Range &input, Args &&... args) const
       -> Fallible<decltype(std::begin(input))> {
-    auto first_result = Parse<First>(input);
+    auto first_result = Parse<First>(input, args...);
     if (!first_result.error() ||
         first_result.error() == ParseError::INCOMPLETE) {
       return first_result;
     }
-    return Parse<Second>(input);
+    return Parse<Second>(input, std::forward<Args>(args)...);
   }
 };
 
