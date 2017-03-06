@@ -16,6 +16,16 @@ namespace json {
 
 namespace internal {
 
+inline unsigned long HexValue(int x) {
+  if (x <= '9') {
+    return x - '0';
+  } else if (x >= 'a') {
+    return x - 'a' + 10;
+  } else {
+    return x - 'A' + 10;
+  }
+}
+
 /* Returns the given character range as a string with all JSON escaped chars
  * replaced by their UTF-8 equivalent.  This function is unsafe to call on
  * ranges that are not valid JSON string content sequences (e.g., it does not
@@ -54,9 +64,28 @@ template <typename Range> inline std::string UnescapeUnsafe(const Range &in) {
       case 't':
         out << char('\t');
         break;
-      default:
-        // TODO!!!
+      case 'u': {
+        const unsigned int u16 = (HexValue(*std::next(next, 1)) << 12) | //
+                                 (HexValue(*std::next(next, 2)) << 8) |  //
+                                 (HexValue(*std::next(next, 3)) << 4) |  //
+                                 (HexValue(*std::next(next, 4)));
+        std::advance(next, 3);
+        if (u16 < 0x80) {
+          out << char(u16);
+        } else {
+          if (u16 < 0x800) {
+            out << char(0xc0 | ((u16 >> 6) & 0x1f))
+                << char(0x80 | ((u16 >> 0) & 0x3f));
+          } else {
+            out << char(0xe0 | ((u16 >> 12) & 0x0f))
+                << char(0x80 | ((u16 >> 6) & 0x3f))
+                << char(0x80 | ((u16 >> 0) & 0x3f));
+          }
+        }
         break;
+      }
+      default:
+        throw std::runtime_error("bad json escape sequence");
       }
       break;
     default:
