@@ -72,7 +72,7 @@ template <typename... F> auto FirstMatch(F &&... f) {
 }
 
 template <typename... F> auto FirstMatchRef(F &&... f) {
-  return FirstMatchFunctor<F...>(std::forward<F>(f)...);
+  return FirstMatchFunctor<F &&...>(std::forward<F>(f)...);
 }
 
 } // namesapce util
