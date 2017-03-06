@@ -49,18 +49,19 @@ cc_test(
     ],
 )
 
-#cc_test(
-#    name = "latching_signal-test",
-#    srcs = [
-#        "latching_signal-test.cc",
-#    ],
-#    copts = [
-#        "-Iexternal/gtest/include",
-#        "-std=c++14",
-#    ],
-#    deps = [
-#        ":concurrent",
-#        "@gtest//:main",
-#        "@boost_1_62_0//:headers",
-#    ],
-#)
+cc_test(
+    name = "latching_signal-test",
+    srcs = [
+        "latching_signal-test.cc",
+    ],
+    copts = [
+        "-Iexternal/gtest/include",
+        "-std=c++14",
+        "-ftemplate-backtrace-limit=0",
+    ],
+    deps = [
+        ":concurrent",
+        "@gtest//:main",
+        "@boost_1_62_0//:headers",
+    ],
+)

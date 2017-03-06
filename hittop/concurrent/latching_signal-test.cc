@@ -1,5 +1,5 @@
-#include "hittop/concurrent/latch.h"
-#include "hittop/concurrent/latch.h"
+#include "hittop/concurrent/latching_signal.h"
+#include "hittop/concurrent/latching_signal.h"
 
 #include "gtest/gtest.h"
 
@@ -8,25 +8,24 @@
 #include <functional>
 #include <string>
 
-using hittop::concurrent::Latch;
+using hittop::concurrent::LatchingSignal;
 
-TEST(LatchTest, ZeroArgs) {
-  Latch<void()> l([]() {});
+TEST(LatchingSignalTest, ZeroArgs) {
+  LatchingSignal<void()> l;
   EXPECT_FALSE(l.is_latched());
   l();
   EXPECT_TRUE(l.is_latched());
 }
 
-TEST(LatchTest, ZeroArgsThruRef) {
-  Latch<void()> l([]() {});
+TEST(LatchingSignalTest, ZeroArgsThruRef) {
+  LatchingSignal<void()> l;
   EXPECT_FALSE(l.is_latched());
   std::ref(l)();
   EXPECT_TRUE(l.is_latched());
 }
 
-TEST(LatchTest, TwoArgsThruRef) {
-  Latch<void(const boost::system::error_code &, std::string *)> l(
-      [](const boost::system::error_code &, std::string *) {});
+TEST(LatchingSignalTest, TwoArgsThruRef) {
+  LatchingSignal<void(const boost::system::error_code &, std::string *)> l;
   EXPECT_FALSE(l.is_latched());
   auto wrapper = std::ref(l);
   boost::optional<decltype(wrapper)> opt;

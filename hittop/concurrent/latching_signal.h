@@ -20,23 +20,67 @@ namespace concurrent {
 
 template <typename FunctionSignature> class LatchingSignal;
 
+using Connection = boost::signals2::connection;
+using DeferredConnection = std::function<boost::optional<Connection>()>;
+
 template <typename... Args> class LatchingSignal<void(Args...)> {
 private:
-  using ArgsTuple = std::tuple<typename std::decay<Args>::type...>;
-  using Signal = boost::signal<void(Args...)>;
+  using ArgsTuple = std::tuple<std::decay_t<Args>...>;
+
+  template <std::size_t I> using ArgType = std::tuple_element_t<I, ArgsTuple>;
+
+  using Signal = boost::signals2::signal<void(Args...)>;
+
+  using State = boost::variant<Signal, ArgsTuple>;
 
   struct IsLatchedVisitor : boost::static_visitor<bool> {
     bool operator()(const Signal &) const { return false; }
     bool operator()(const ArgsTuple &) const { return true; }
   };
 
-  template <typename Slot> struct ConnectVisitor : boost::static_visitor<bool> {
-    Slot *slot;
+  template <std::size_t I>
+  struct GetSingleArgVisitor : boost::static_visitor<const ArgType<I> *> {
+    const ArgType<I> *operator()(const Signal &) const { return nullptr; }
+    const ArgType<I> *operator()(const ArgsTuple &args) const {
+      return std::get<I>(&args);
+    }
+  };
 
-    void operator()(Signal &signal) const { signal.connect(std::move(*slot)); }
+  struct GetArgsVisitor : boost::static_visitor<const ArgsTuple *> {
+    const ArgsTuple *operator()(const Signal &) const { return nullptr; }
+    const ArgsTuple *operator()(const ArgsTuple &args) const { return &args; }
+  };
 
-    void operator()(const ArgsTuple &args) const {
-      util::tuples::Apply(*slot, args);
+  template <typename Slot>
+  struct ConnectVisitor : boost::static_visitor<boost::optional<Connection>> {
+    Slot &&slot;
+
+    boost::optional<Connection> operator()(Signal &signal) const {
+      return signal.connect(std::forward<Slot>(slot));
+    }
+
+    boost::optional<Connection> operator()(const ArgsTuple &args) const {
+      util::tuples::Apply(std::forward<Slot>(slot), args);
+      return boost::none;
+    }
+  };
+
+  template <typename Slot>
+  struct DeferredConnectVisitor : boost::static_visitor<DeferredConnection> {
+    Slot &&slot;
+
+    DeferredConnection operator()(Signal &signal) const {
+      return [connection = signal.connection(std::forward<Slot>(slot))]()
+          ->DeferredConnection {
+        return connection;
+      };
+    }
+
+    DeferredConnection operator()(const ArgsTuple &args) const {
+      return [ args, slot = std::forward<Slot>(slot) ]() {
+        util::tuples::Apply(std::forward<Slot>(slot), args);
+        return boost::none;
+      };
     }
   };
 
@@ -48,85 +92,103 @@ public:
     DeferredInvocation(Signal signal, ArgsTuple args)
         : signal_(std::move(signal)), args_(std::move(args)) {}
 
-    explicit operator bool() const { return bool{handler_}; }
+    explicit operator bool() const { return bool{signal_}; }
 
     void operator()() {
-      if (handler_) {
-        util::ScopeExit clear_state([&]() { args_ = boost::none; });
-        util::tuples::Apply(std::move(handler_), std::move(*args_));
+      if (signal_) {
+        util::ScopeExit clear_state([&]() {
+          signal_ = boost::none;
+          args_ = boost::none;
+        });
+        util::tuples::Apply(std::move(signal_), std::move(*args_));
       }
     }
 
   private:
-    Handler handler_;
+    boost::optional<Signal> signal_;
     boost::optional<ArgsTuple> args_;
   };
 
   using result_type = void;
 
-  LatchingSignal() = default;
+  // Construct an unlatched object.
+  LatchingSignal() { state_.emplace(); }
+
+  // Construct in a latched state.
+  template <typename... A>
+  explicit LatchingSignal(A &&... a)
+      : state_(boost::in_place(ArgsTuple(std::forward<A>(a)...))) {}
+
+  // Move construct/assign.
+  LatchingSignal(LatchingSignal &&) = default;
+  LatchingSignal &operator=(LatchingSignal &&) = default;
+
+  // Disable copying.
   LatchingSignal(const LatchingSignal &) = delete;
   LatchingSignal &operator=(const LatchingSignal &) = delete;
 
   bool is_latched() const {
     std::unique_lock<std::mutex> lock(mutex_);
-    return boost::apply_visitor(IsLatchedVisitor{}, state_);
+    return boost::apply_visitor(IsLatchedVisitor{}, *state_);
   }
 
-  template <typename Slot> void Connect(Slot &&slot) {
+  // Connects the slot to the signal if not yet latched; if latched, invokes the
+  // slot immediately with the stored args.
+  template <typename Slot> boost::optional<Connection> Connect(Slot &&slot) {
     std::unique_lock<std::mutex> lock(mutex_);
-    boost::apply_visitor(ConnectVisitor{&slot}, state_);
+    return boost::apply_visitor(ConnectVisitor<Slot>{&slot}, *state_);
   }
 
-  // TODO - ConnectDeferred
-
-  void operator()(Args... a) {
+  template <typename Slot> DeferredConnection ConnectDeferred(Slot &&slot) {
     std::unique_lock<std::mutex> lock(mutex_);
-    if (state_.which() == 0) {
-      util::ScopeExit save_args([&]() { state_ = ArgsTuple(a...); });
-      auto &handler = boost::get<Handler>(state_);
-      handler(a...);
-    }
+    return boost::apply_visitor(
+        DeferredConnectVisitor<Slot>{std::forward<Slot>(slot)}, *state_);
   }
 
-  DeferredInvocation InvokeDeferred(Args... a) {
-    DeferredInvocation result;
-    {
-      std::unique_lock<std::mutex> lock(mutex_);
-      if (state_.which() == 0) {
-        auto handler = std::move(boost::get<Handler>(state_));
-        ArgsTuple args(a...);
-        state_ = args;
-        result = boost::in_place(std::move(handler), std::move(args));
-        util::ScopeExit save_args([&]() { state_ = args; });
-        util::tuples::Apply(handler, args);
-      }
-    }
-    return result;
-  }
-
-  template <std::size_t I>
-  const typename std::tuple_element<I, ArgsTuple>::type *arg() const {
+  template <typename... A> bool operator()(A &&... a) {
     std::unique_lock<std::mutex> lock(mutex_);
-    if (state_.which() == 1) {
-      return std::get<I>(&boost::get<ArgsTuple>(state_));
+    // Intentionally not using visitor here so that we don't need to shuttle the
+    // args around.
+    if (state_->which() == 0) {
+      Signal signal = std::move(boost::get<Signal>(*state_));
+      // TODO - what if constructing the ArgsTuple throws?
+      state_.emplace(ArgsTuple(std::forward<A>(a)...));
+      util::tuples::Apply(std::move(signal), boost::get<ArgsTuple>(*state_));
+      return true;
     } else {
-      return nullptr;
+      return false;
     }
   }
 
-  boost::optional<ArgsTuple> args() const {
+  template <typename... A> DeferredInvocation InvokeDeferred(A &&... a) {
     std::unique_lock<std::mutex> lock(mutex_);
-    if (state_.which() == 1) {
-      return boost::get<ArgsTuple>(state_);
+    // Intentionally not using visitor here so that we don't need to shuttle the
+    // args around.
+    if (state_->which() == 0) {
+      Signal signal = std::move(boost::get<Signal>(*state_));
+      // TODO - what if constructing the ArgsTuple throws?
+      state_.emplace(ArgsTuple(std::forward<A>(a)...));
+      return DeferredInvocation(std::move(signal),
+                                boost::get<ArgsTuple>(*state_));
     } else {
-      return boost::none;
+      return DeferredInvocation{};
     }
   }
 
-public:
+  template <std::size_t I> const ArgType<I> *arg() const {
+    std::unique_lock<std::mutex> lock(mutex_);
+    return boost::apply_visitor(GetSingleArgVisitor<I>{}, *state_);
+  }
+
+  const ArgsTuple *args() const {
+    std::unique_lock<std::mutex> lock(mutex_);
+    return boost::apply_visitor(GetArgsVisitor{}, *state_);
+  }
+
+private:
   mutable std::mutex mutex_;
-  boost::variant<Handler, ArgsTuple> state_;
+  // TODO - use aligned storage here
+  boost::optional<State> state_;
 };
 
 } // namespace concurrent
