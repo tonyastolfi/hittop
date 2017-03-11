@@ -24,6 +24,5 @@ cc_test(
     deps = [
         "@gtest//:main",
         ":kwargs",
-        "//hittop/util:test_util"
     ],
 )
