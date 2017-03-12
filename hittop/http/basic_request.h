@@ -147,6 +147,8 @@ public:
 
   auto &headers() const { return headers_; }
 
+  auto &header(std::size_t index) const { return headers_[index]; }
+
 private:
   using Headers = Sequence<BasicHeader<SubRange>>;
 
