@@ -64,8 +64,6 @@ private:
     auto result = run_parser([segments](grammar::segment, auto &&run_parser) {
       auto result = run_parser();
       if (!result.error()) {
-        std::clog << "  path segment: " << util::RangeToString(result.get())
-                  << std::endl;
         segments->emplace_back(std::begin(result.get()),
                                std::end(result.get()));
       }

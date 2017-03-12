@@ -286,8 +286,16 @@ using general_header = parser::Either<Cache_Control,     //
 using abs_path = uri::grammar::abs_path;
 using authority = uri::grammar::authority;
 
-using Request_URI =
-    parser::Either<parser::Literal<'*'>, absoluteURI, abs_path, authority>;
+struct Star_ {
+  using type = parser::Literal<'*'>;
+};
+using Star = parser::ForwardRef<Star_>;
+
+using Request_URI = parser::Either<
+    parser::Concat<uri::grammar::hier_part,
+                   parser::Opt<parser::Concat<parser::Literal<'#'>,
+                                              uri::grammar::fragment>>>,
+    Star, absoluteURI, abs_path, authority>;
 
 using Request_Line =
     parser::Concat<Method, SP, Request_URI, SP, HTTP_Version, CRLF>;

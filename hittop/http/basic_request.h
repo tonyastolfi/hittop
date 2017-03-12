@@ -1,7 +1,24 @@
-#ifndef HITTOP_HTTP_BASIC_MESSAGE_H
-#define HITTOP_HTTP_BASIC_MESSAGE_H
+#ifndef HITTOP_HTTP_BASIC_REQUEST_H
+#define HITTOP_HTTP_BASIC_REQUEST_H
 
 #include <algorithm>
+#include <cstddef>
+#include <iterator>
+#include <tuple>
+#include <type_traits>
+#include <unordered_map>
+#include <utility>
+#include <vector>
+
+#include "boost/range/iterator_range.hpp"
+#include "boost/variant.hpp"
+
+#include "third_party/short_alloc/short_alloc.h"
+
+#include "hittop/http/basic_header.h"
+#include "hittop/uri/basic_uri.h"
+#include "hittop/util/boost_iterator_range_helper.h"
+#include "hittop/util/in_place_alloc_factory.h"
 
 namespace hittop {
 namespace http {
@@ -57,10 +74,11 @@ template <typename Range>
 struct MethodNameVisitor : boost::static_visitor<Range> {
   Range operator()(const Range &r) const { return r; }
 
-  Range operator()(const HttpMethod &m) const {
+  Range operator()(const HttpMethod m) const {
     static const std::string names[] = {
         "UNKNOWN", "CONNECT", "DELETE", "GET", "HEAD", "POST", "PUT", "TRACE"};
-    return Range(n[m].begin(), n[m].end());
+    const std::size_t index = static_cast<std::size_t>(m);
+    return Range(names[index].begin(), names[index].end());
   }
 };
 
@@ -70,12 +88,15 @@ template <typename Range, //
           typename InPlaceFactoryBuilder = DefaultInPlaceFactoryBuilder>
 class BasicRequest {
 public:
+  using FieldName = SubRange;
+  using FieldValue = SubRange;
+
   using Uri =
-      BasicUrl<SubRange, SubRange, DefaultArenaVector<SubRange>,
-               DefaultArenaMap<SubRange, SubRange>, InPlaceFactoryBuilder>;
+      uri::BasicUri<SubRange, SubRange, DefaultArenaVector<SubRange>,
+                    DefaultArenaMap<SubRange, SubRange>, InPlaceFactoryBuilder>;
 
   template <typename... Args> void assign(Args &&... args) {
-    range_ = builder_.in_place(std::forward<Args>(args));
+    range_ = builder_.template in_place<Range>(std::forward<Args>(args)...);
   }
 
   auto begin() { return std::begin(range_); }
@@ -108,9 +129,9 @@ public:
     return boost::apply_visitor(MethodNameVisitor<SubRange>{});
   }
 
-  void set_major_version(int major) const { version_.major = major; }
+  void set_major_version(int major) { version_.major = major; }
 
-  void set_minor_version(int minor) const { version_.minor = minor; }
+  void set_minor_version(int minor) { version_.minor = minor; }
 
   void set_http_version(const HttpVersion &version) { version_ = version; }
 
@@ -127,17 +148,18 @@ public:
   auto &headers() const { return &headers_; }
 
 private:
+  using Headers = Sequence<BasicHeader<SubRange>>;
+
   InPlaceFactoryBuilder builder_;
   boost::optional<Range> range_;
   GenericMethod<SubRange> method_;
   Uri uri_;
   HttpVersion version_;
-  boost::optional<Sequence<BasicHeader<SubRange>>> opt_headers_{
-      builder_.in_place()};
-  Sequence<BasicHeader<SubRange>> &headers_ = *opt_headers_;
+  boost::optional<Headers> opt_headers_{builder_.template in_place<Headers>()};
+  Headers &headers_ = *opt_headers_;
 };
-g
+
 } // namespace http
 } // namespace hittop
 
-#endif // HITTOP_HTTP_BASIC_MESSAGE_H
+#endif // HITTOP_HTTP_BASIC_REQUEST_H

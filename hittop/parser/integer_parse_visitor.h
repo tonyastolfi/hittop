@@ -22,7 +22,7 @@ template <> struct base_traits<10> {
 template <> struct base_traits<16> {
   static bool isdigit(int n) { return std::isxdigit(n); }
 
-  static array<int, 256> values;
+  static std::array<int, 256> values;
   static bool initialized;
 
   static int value_of(int n) { return values[n]; }
@@ -31,8 +31,8 @@ template <> struct base_traits<16> {
 template <typename F, typename Integer = int, Integer Base = 10>
 class IntegerParseVisitor {
 public:
-  template <typname... A>
-  explicit IntegerParseVisitor(A &&... a) : f_(std::forward(a)...) {}
+  template <typename... A>
+  explicit IntegerParseVisitor(A &&... a) : f_(std::forward<A>(a)...) {}
 
   template <typename Rule, typename Runner>
   void operator()(Rule, Runner &&run_parser) {

@@ -1,7 +1,9 @@
 cc_library(
     name = "util",
     hdrs = [
+        "boost_iterator_range_helper.h",
         "fallible.h",
+        "hash.h",
         "load_file_as_string.h",
         "range_to_string.h",
         "scope_exit.h",

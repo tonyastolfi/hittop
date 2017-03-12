@@ -12,22 +12,27 @@ template <typename Range> struct BasicHeader {
   Range name;
   Range value;
 
+  template <typename Name, typename Value>
+  BasicHeader(Name &&n, Value &&v)
+      : name(std::forward<Name>(n)), value(std::forward<Value>(v)) {}
+
   operator std::pair<Range, Range>() const {
     return std::make_pair(name, value);
   }
 };
 
 template <typename LeftRange, typename RightRange>
-bool operator==(const Header<LeftRange> &left,
-                const Header<RightRange> &right) {
+bool operator==(const BasicHeader<LeftRange> &left,
+                const BasicHeader<RightRange> &right) {
   return std::equal(std::begin(left.name), std::end(left.name),
                     std::begin(right.name), std::end(right.name)) &&
-   std::equal(std::begin(left.value), std::end(left.value))
-  std::begin(right.value), std::end(right.value));
+         std::equal(std::begin(left.value), std::end(left.value),
+                    std::begin(right.value), std::end(right.value));
 }
 
 template <typename LeftRange, typename RightRange>
-bool operator<(const Header<LeftRange> &left, const Header<RightRange> &right) {
+bool operator<(const BasicHeader<LeftRange> &left,
+               const BasicHeader<RightRange> &right) {
   return std::lexicographical_compare(
              std::begin(left.name), std::end(left.name), std::begin(right.name),
              std::end(right.name)) ||

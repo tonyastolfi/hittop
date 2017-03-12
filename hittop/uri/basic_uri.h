@@ -60,17 +60,13 @@ public:
     uri_ = builder_.template in_place<Range>(std::forward<Args>(args)...);
   }
 
-  auto begin() { return std::begin(*uri_); }
-
   auto begin() const { return std::begin(*uri_); }
 
   auto cbegin() const { return std::cbegin(*uri_); }
 
-  auto end() { return std::begin(*uri_); }
+  auto end() const { return std::end(*uri_); }
 
-  auto end() const { return std::begin(*uri_); }
-
-  auto cend() const { return std::cbegin(*uri_); }
+  auto cend() const { return std::cend(*uri_); }
 
   const boost::optional<SubRange> &scheme() const { return scheme_; }
 
@@ -108,7 +104,7 @@ public:
     query_ = builder_.template in_place<SubRange>(std::forward<Args>(args)...);
   }
 
-  const boost::optional<SubRange> &fragment() const { return query_; }
+  const boost::optional<SubRange> &fragment() const { return fragment_; }
 
   template <typename... Args> void assign_fragment(Args &&... args) {
     fragment_ =
