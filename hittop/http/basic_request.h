@@ -145,7 +145,7 @@ public:
 
   auto mutable_headers() { return &headers_; }
 
-  auto &headers() const { return &headers_; }
+  auto &headers() const { return headers_; }
 
 private:
   using Headers = Sequence<BasicHeader<SubRange>>;

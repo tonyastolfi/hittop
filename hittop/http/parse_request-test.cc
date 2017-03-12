@@ -32,6 +32,7 @@ TEST(ParseRequestTest, ChromeRequest) {
   EXPECT_EQ(RangeToString(*request.uri().fragment()), "myfrag");
   EXPECT_EQ(request.version().major, 2);
   EXPECT_EQ(request.version().minor, 3);
+  EXPECT_EQ(request.headers().size(), 7U);
 }
 
 } // namespace
