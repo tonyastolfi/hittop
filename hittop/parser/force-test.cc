@@ -17,5 +17,6 @@ using hittop::parser::Repeat;
 TEST(ParseForce, OkRepeatEmpty) {
   const std::string input = "";
   auto result = Parse<Force<Repeat<Literal<'a'>>>>(input);
-  EXPECT_FALSE(result.error()) << "Actual error: " << result.error().message();
+  EXPECT_FALSE(result.error())
+      << "Actual error: " << make_error_condition(result.error()).message();
 }
