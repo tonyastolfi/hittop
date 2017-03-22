@@ -18,7 +18,7 @@ template <> class Parser<AnyChar> {
 public:
   template <typename Range, typename... Args>
   auto operator()(const Range &input, Args &&...) const
-      -> Fallible<decltype(std::begin(input))> {
+      -> ParseResult<decltype(std::begin(input))> {
     auto first = std::begin(input);
     if (first == std::end(input)) {
       return {first, ParseError::INCOMPLETE};

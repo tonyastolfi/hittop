@@ -16,7 +16,7 @@ using abc_grammar = Literal<'a', 'b', 'c'>;
 TEST(ParseLiteral, Ok) {
   std::string input = "abc";
   auto result = Parse<a_grammar>(input);
-  EXPECT_FALSE(result.error());
+  EXPECT_TRUE(result.ok());
   EXPECT_EQ(result.get(), std::next(input.begin()));
 }
 

@@ -37,7 +37,7 @@ public:
   template <typename Rule, typename Runner>
   void operator()(Rule, Runner &&run_parser) {
     auto result = run_parser();
-    if (!result.error()) {
+    if (result.ok()) {
       Integer value = 0;
       const auto first = std::begin(result.get());
       const auto last = std::end(result.get());

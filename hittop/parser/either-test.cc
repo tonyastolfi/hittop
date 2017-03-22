@@ -12,10 +12,10 @@ using hittop::parser::Parser;
 
 TEST(EitherTest, SingleChars) {
   using Grammar = Either<Literal<'a'>, Literal<'b'>, Literal<'c'>>;
-  EXPECT_FALSE(Parse<Grammar>(std::string("a")).error());
-  EXPECT_FALSE(Parse<Grammar>(std::string("b")).error());
-  EXPECT_FALSE(Parse<Grammar>(std::string("c")).error());
-  EXPECT_FALSE(!Parse<Grammar>(std::string("d")).error());
+  EXPECT_TRUE(Parse<Grammar>(std::string("a")).ok());
+  EXPECT_TRUE(Parse<Grammar>(std::string("b")).ok());
+  EXPECT_TRUE(Parse<Grammar>(std::string("c")).ok());
+  EXPECT_FALSE(Parse<Grammar>(std::string("d")).ok());
 }
 
 } // namespace

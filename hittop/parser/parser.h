@@ -10,13 +10,32 @@
 #include "hittop/parser/parse_error.h"
 #include "hittop/parser/traits.h"
 
-#include "hittop/util/fallible.h"
 #include "hittop/util/is_callable.h"
 
 namespace hittop {
 namespace parser {
 
-using util::Fallible;
+template <typename T> class ParseResult {
+public:
+  ParseResult() : error_(ParseError::NONE) {}
+
+  /* implicit */ ParseResult(T value)
+      : value_(value), error_(ParseError::NONE) {}
+
+  ParseResult(T value, ParseError err) : value_(value), error_(err) {}
+
+  const T &get() const { return value_; }
+
+  T &&consume() { return std::move(value_); }
+
+  ParseError error() const { return error_; }
+
+  bool ok() const { return error_ == ParseError::NONE; }
+
+private:
+  T value_;
+  ParseError error_;
+};
 
 // The form of a Parser class.  There is no generic implementation of Parser,
 // only partial and full specializations that define how to parse specific
@@ -30,16 +49,16 @@ template <typename T> struct OptimizedParser : Parser<T> {};
 
 // Passed to visitors during a parse.
 template <typename Grammar, typename Range> struct ParserRunner {
-  using iterator = decltype(std::begin(std::declval<Range>()));
-  using output_range_type = boost::iterator_range<iterator>;
-  using result_type = Fallible<output_range_type>;
+  using Iterator = decltype(std::begin(std::declval<Range>()));
+  using OutputRangeType = boost::iterator_range<Iterator>;
+  using ResultType = ParseResult<OutputRangeType>;
 
 public:
   explicit ParserRunner(const Range &input) : input_(input) {}
 
-  template <typename... Args> result_type operator()(Args &&... args);
+  template <typename... Args> ResultType operator()(Args &&... args);
 
-  Fallible<iterator> &&consume() {
+  ParseResult<Iterator> &&consume() {
     if (!called_) {
       operator()();
     }
@@ -49,7 +68,7 @@ public:
 private:
   const Range &input_;
   bool called_ = false;
-  Fallible<iterator> result_;
+  ParseResult<Iterator> result_;
 };
 
 // Convenience wrapper around defining a new Parser object and invoking it on
@@ -94,7 +113,7 @@ auto Parse(const char *input)
 // a visitor.
 template <typename Grammar, typename Range>
 template <typename... Args>
-inline typename ParserRunner<Grammar, Range>::result_type
+inline typename ParserRunner<Grammar, Range>::ResultType
 ParserRunner<Grammar, Range>::operator()(Args &&... args) {
   called_ = true;
   result_ = Parse<Grammar>(input_, std::forward<Args>(args)...);

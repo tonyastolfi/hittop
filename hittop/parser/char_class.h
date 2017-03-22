@@ -33,8 +33,7 @@ struct CharClassTester<First, Rest...> {
   bool operator()(int ch) const {
     std::array<int, 1> a;
     a[0] = ch;
-    Parser<First> parser;
-    return !parser(a).error() || CharClassTester<Rest...>{}(ch);
+    return Parser<First>{}(a).ok() || CharClassTester<Rest...>{}(ch);
   }
 };
 
@@ -44,7 +43,7 @@ template <typename... Rules> class Parser<CharClass<Rules...>> {
 public:
   template <typename Range, typename... Args>
   auto operator()(const Range &input, Args &&... args) const
-      -> Fallible<decltype(std::begin(input))> {
+      -> ParseResult<decltype(std::begin(input))> {
     static auto lookup = BuildLookup();
     auto next = std::begin(input);
     if (next == std::end(input)) {

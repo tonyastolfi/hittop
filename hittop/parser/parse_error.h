@@ -12,10 +12,13 @@ namespace parser {
 
 /// Enumerates the canonical error space for parse results.
 enum struct ParseError : int {
-  /// The parser ran out of input in the middle of an otherwise succeeding
-  /// parse, therefore it is not possible to tell whether the parse would have
-  /// succeeded or not had more input been given.
-  INCOMPLETE = 1,
+  // No error!  Success!!
+  NONE = 0,
+
+  // The parser ran out of input in the middle of an otherwise succeeding
+  // parse, therefore it is not possible to tell whether the parse would have
+  // succeeded or not had more input been given.
+  INCOMPLETE,
 
   // An unexpected character was encountered.  The returned (Iterator) value
   // will point to the bad character, ie. one past the last successfully parsed
@@ -49,6 +52,8 @@ public:
     // ParseError value to NOT fail the compilation, thus allowing the enum and
     // the message table to become out of sync.
     switch (static_cast<ParseError>(c)) {
+    case ParseError::NONE:
+      return "success";
     case ParseError::INCOMPLETE:
       return "incomplete";
     case ParseError::BAD_CHAR:

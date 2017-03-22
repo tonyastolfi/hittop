@@ -37,9 +37,9 @@ template <typename First, typename Second> class Parser<Concat<First, Second>> {
 public:
   template <typename Range, typename... Args>
   auto operator()(const Range &input, Args &&... args) const
-      -> Fallible<decltype(std::begin(input))> {
+      -> ParseResult<decltype(std::begin(input))> {
     auto first_result = Parse<First>(input, args...);
-    if (first_result.error()) {
+    if (!first_result.ok()) {
       return first_result;
     } else {
       auto remaining_input =

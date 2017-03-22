@@ -16,7 +16,7 @@ public:
 
   template <typename F> void operator()(grammar::scheme, F &&run_parser) const {
     auto result = run_parser();
-    if (!result.error()) {
+    if (result.ok()) {
       uri_->assign_scheme(std::begin(result.get()), std::end(result.get()));
     }
   }
@@ -25,25 +25,25 @@ public:
   void operator()(grammar::userinfo_at, F &&run_parser) const {
     auto result = run_parser([this](grammar::userinfo, auto &&run_parser) {
       auto result = run_parser();
-      if (!result.error()) {
+      if (result.ok()) {
         uri_->assign_user(std::begin(result.get()), std::end(result.get()));
       }
     });
-    if (result.error()) {
+    if (!result.ok()) {
       uri_->reset_user();
     }
   }
 
   template <typename F> void operator()(grammar::host, F &&run_parser) const {
     auto result = run_parser();
-    if (!result.error()) {
+    if (result.ok()) {
       uri_->assign_host(std::begin(result.get()), std::end(result.get()));
     }
   }
 
   template <typename F> void operator()(grammar::port, F &&run_parser) const {
     auto result = run_parser();
-    if (!result.error()) {
+    if (result.ok()) {
       uri_->assign_port(std::stoul(util::RangeToString(result.get())));
     }
   }
@@ -63,12 +63,12 @@ private:
     typename Uri::sequence_type *segments = uri_->mutable_path_segments();
     auto result = run_parser([segments](grammar::segment, auto &&run_parser) {
       auto result = run_parser();
-      if (!result.error()) {
+      if (result.ok()) {
         segments->emplace_back(std::begin(result.get()),
                                std::end(result.get()));
       }
     });
-    if (!result.error()) {
+    if (result.ok()) {
       uri_->assign_path(std::begin(result.get()), std::end(result.get()));
     }
   }
@@ -79,7 +79,7 @@ public:
     //    auto * params = uri_->mutable_query_params();
     //    auto result = run_parser([params](grammar::);
     auto result = run_parser();
-    if (!result.error()) {
+    if (result.ok()) {
       uri_->assign_query(std::begin(result.get()), std::end(result.get()));
     }
   }
@@ -87,7 +87,7 @@ public:
   template <typename F>
   void operator()(grammar::fragment, F &&run_parser) const {
     auto result = run_parser();
-    if (!result.error()) {
+    if (result.ok()) {
       uri_->assign_fragment(std::begin(result.get()), std::end(result.get()));
     }
   }
@@ -99,7 +99,7 @@ private:
 template <typename T> auto MakeUriParseVisitor(T *uri) {
   return [uri](grammar::URI_reference, auto &&run_parser) {
     auto result = run_parser(UriFieldParseVisitor<T>{uri});
-    if (!result.error()) {
+    if (result.ok()) {
       uri->assign(std::begin(result.get()), std::end(result.get()));
     }
   };

@@ -32,7 +32,7 @@ public:
     auto *uri = request_->mutable_uri();
     uri::UriFieldParseVisitor<std::decay_t<decltype(*uri)>> uri_visitor(uri);
     auto result = run_parser(uri_visitor);
-    if (!result.error()) {
+    if (result.ok()) {
       uri->assign(std::begin(result.get()), std::end(result.get()));
     }
   }
@@ -40,7 +40,7 @@ public:
   template <typename F>
   void operator()(grammar::HttpMethod, F &&run_parser) const {
     auto result = run_parser();
-    if (!result.error()) {
+    if (result.ok()) {
       auto first = std::begin(result.get());
       auto last = std::end(result.get());
       if (first != last) {
@@ -83,14 +83,14 @@ public:
     run_parser(util::FirstMatchRef(
         [&](grammar::field_name, auto &&run_parser) {
           auto result = run_parser();
-          if (!result.error()) {
+          if (result.ok()) {
             name = typename Request::FieldName(std::begin(result.get()),
                                                std::end(result.get()));
           }
         },
         [&](grammar::field_value, auto &&run_parser) {
           auto result = run_parser();
-          if (!result.error()) {
+          if (result.ok()) {
             typename Request::FieldValue value(std::begin(result.get()),
                                                std::end(result.get()));
             request_->mutable_headers()->emplace_back(std::move(name),

@@ -31,14 +31,14 @@ protected:
       if (!run_parser(FirstMatch(
                           [&name](http::field_name, auto &&run_parser) {
                             auto result = run_parser();
-                            if (!result.error()) {
+                            if (result.ok()) {
                               name.assign(std::begin(result.get()),
                                           std::end(result.get()));
                             }
                           },
                           [&value](http::field_value, auto &&run_parser) {
                             auto result = run_parser();
-                            if (!result.error()) {
+                            if (result.ok()) {
                               value.assign(std::begin(result.get()),
                                            std::end(result.get()));
                             }

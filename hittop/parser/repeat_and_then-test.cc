@@ -40,41 +40,41 @@ using CorrectBacktrackGrammar =
 TEST(RepeatAndThenTest, ConcatRepeatFails) {
   std::string in = "a1b2c3d!";
   auto result = Parse<BadGrammar>(in);
-  EXPECT_FALSE(!result.error());
+  EXPECT_FALSE(result.ok());
   EXPECT_EQ(std::prev(in.end()), result.get());
 }
 
 TEST(RepeatAndThenTest, Ok) {
   std::string in = "a1b2c3d!";
   auto result = Parse<CorrectGrammar>(in);
-  EXPECT_FALSE(result.error());
+  EXPECT_TRUE(result.ok());
   EXPECT_EQ(std::prev(in.end()), result.get());
 }
 
 TEST(RepeatAndThenTest, OkBacktrack1) {
   std::string in = "a1b2c3d4!";
   auto result = Parse<CorrectGrammar>(in);
-  EXPECT_FALSE(result.error());
+  EXPECT_TRUE(result.ok());
   EXPECT_EQ(std::prev(in.end(), 2), result.get());
 }
 
 TEST(RepeatAndThenTest, BacktrackConcatRepeatFails) {
   std::string in = "abcdefgeoi!";
   auto result = Parse<BadBacktrackGrammar>(in);
-  EXPECT_FALSE(!result.error());
+  EXPECT_FALSE(result.ok());
   EXPECT_EQ(std::prev(in.end()), result.get());
 }
 
 TEST(RepeatAndThenTest, BacktrackOk) {
   std::string in = "abcdefgeoi!";
   auto result = Parse<CorrectBacktrackGrammar>(in);
-  EXPECT_FALSE(result.error());
+  EXPECT_TRUE(result.ok());
   EXPECT_EQ(std::prev(in.end()), result.get());
 }
 
 TEST(RepeatAndThenTest, BacktrackFail) {
   std::string in = "abcdefgfoo!";
   auto result = Parse<CorrectBacktrackGrammar>(in);
-  EXPECT_FALSE(!result.error());
+  EXPECT_TRUE(result.ok());
   EXPECT_EQ(in.begin(), result.get());
 }

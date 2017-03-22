@@ -34,10 +34,9 @@ template <typename First, typename Second> class Parser<Either<First, Second>> {
 public:
   template <typename Range, typename... Args>
   auto operator()(const Range &input, Args &&... args) const
-      -> Fallible<decltype(std::begin(input))> {
+      -> ParseResult<decltype(std::begin(input))> {
     auto first_result = Parse<First>(input, args...);
-    if (!first_result.error() ||
-        first_result.error() == ParseError::INCOMPLETE) {
+    if (first_result.ok() || first_result.error() == ParseError::INCOMPLETE) {
       return first_result;
     }
     return Parse<Second>(input, std::forward<Args>(args)...);

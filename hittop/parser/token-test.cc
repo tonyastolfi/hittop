@@ -34,13 +34,13 @@ TEST(ParseToken, TokenSizes) {
 
 TEST(ParseToken, OkConsumePartial) {
   auto result = Parse<tokens::abcd>(input());
-  EXPECT_FALSE(result.error());
+  EXPECT_TRUE(result.ok());
   EXPECT_EQ(result.get(), input().begin() + 4);
 }
 
 TEST(ParseToken, OkConsumeFull) {
   auto result = Parse<tokens::abcdef>(input());
-  EXPECT_FALSE(result.error());
+  EXPECT_TRUE(result.ok());
   EXPECT_EQ(result.get(), input().end());
 }
 

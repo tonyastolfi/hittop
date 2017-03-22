@@ -28,13 +28,13 @@ const char kMultiPart[] = "abababababa";
 
 TEST(ParseConcat, OkPrefix) {
   auto result = Parse<ab_grammar>(as_literal(kGood));
-  EXPECT_FALSE(result.error());
+  EXPECT_TRUE(result.ok());
   EXPECT_EQ(result.get(), &kGood[2]);
 }
 
 TEST(ParseConcat, OkFull) {
   auto result = Parse<ab_grammar>(as_literal(kExact));
-  EXPECT_FALSE(result.error());
+  EXPECT_TRUE(result.ok());
   EXPECT_EQ(result.get(), &kExact[2]);
 }
 
@@ -65,6 +65,6 @@ TEST(ParseConcat, BadCharSecond) {
 TEST(ParseConcat, MoreThan2Parts) {
   auto result =
       Parse<Concat<ab_grammar, ab_grammar, ab_grammar>>(as_literal(kMultiPart));
-  EXPECT_FALSE(result.error());
+  EXPECT_TRUE(result.ok());
   EXPECT_EQ(result.get(), &kMultiPart[6]);
 }

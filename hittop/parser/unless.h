@@ -22,12 +22,12 @@ class Parser<Unless<RejectGrammar, DefaultGrammar>> {
 public:
   template <typename Range, typename... Args>
   auto operator()(const Range &input, Args &&... args) const
-      -> Fallible<decltype(std::begin(input))> {
+      -> ParseResult<decltype(std::begin(input))> {
     auto reject_result = Parse<RejectGrammar>(input, args...);
     if (reject_result.error() == ParseError::INCOMPLETE) {
       return reject_result;
     }
-    if (!reject_result.error()) {
+    if (reject_result.ok()) {
       return {reject_result.consume(), ParseError::FAILED_CONDITION};
     }
     return Parse<DefaultGrammar>(input, std::forward<Args>(args)...);

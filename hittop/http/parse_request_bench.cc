@@ -38,7 +38,7 @@ int main(int argc, char **argv) {
       hittop::http::ZeroCopyRequest<const char *> request;
       auto result = hittop::http::ParseRequest(
           boost::make_iterator_range(next, next + request_size), &request);
-      if (result.error()) {
+      if (!result.ok()) {
         std::cerr << "Fail!" << std::endl;
       }
     }

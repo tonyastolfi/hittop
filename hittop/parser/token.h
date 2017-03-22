@@ -18,7 +18,7 @@ template <typename T> class Parser<Token<T>> {
 public:
   template <typename Range, typename... Args>
   auto operator()(const Range &input, Args &&...)
-      -> Fallible<decltype(std::begin(input))> {
+      -> ParseResult<decltype(std::begin(input))> {
     auto input_size = boost::size(input);
     auto n = std::min(input_size, T::size());
     const auto first = std::begin(input);

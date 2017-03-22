@@ -110,7 +110,7 @@ public:
   template <typename F>
   void operator()(grammar::StringContents, F &&run_parser) const {
     auto result = run_parser();
-    if (!result.error()) {
+    if (result.ok()) {
       *output_ = internal::UnescapeUnsafe(result.get());
     }
   }
@@ -118,21 +118,21 @@ public:
   template <typename F>
   void operator()(grammar::Boolean, F &&run_parser) const {
     auto result = run_parser();
-    if (!result.error()) {
+    if (result.ok()) {
       *output_ = Boolean{*std::begin(result.get()) == 't'};
     }
   }
 
   template <typename F> void operator()(grammar::Number, F &&run_parser) const {
     auto result = run_parser();
-    if (!result.error()) {
+    if (result.ok()) {
       *output_ = std::stod(util::RangeToString(result.get()));
     }
   }
 
   template <typename F> void operator()(grammar::Null, F &&run_parser) const {
     auto result = run_parser();
-    if (!result.error()) {
+    if (result.ok()) {
       *output_ = Null{};
     }
   }
@@ -147,7 +147,7 @@ public:
         items.emplace_back(std::move(next_item));
       }
     });
-    if (!result.error()) {
+    if (result.ok()) {
       *output_ = std::move(items);
     }
   }
@@ -174,7 +174,7 @@ public:
                 }
               }));
         });
-    if (!result.error()) {
+    if (result.ok()) {
       *output_ = std::move(object);
     }
   }

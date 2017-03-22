@@ -45,7 +45,7 @@ class Parser<RepeatAndThen<Repeated, Rest, BacktrackMemorySize>> {
 public:
   template <typename Range, typename... Args>
   auto operator()(const Range &input, Args &&... args) const
-      -> Fallible<decltype(std::begin(input))> {
+      -> ParseResult<decltype(std::begin(input))> {
 
     using Iterator = decltype(std::begin(input));
     constexpr std::size_t kSize = sizeof(Iterator) * BacktrackMemorySize * 3;
@@ -60,7 +60,7 @@ public:
     for (;;) {
       auto result = Parse<Repeated>(
           boost::make_iterator_range(prior_success.back(), last), args...);
-      if (result.error()) {
+      if (!result.ok()) {
         if (result.error() == ParseError::INCOMPLETE) {
           return result;
         }
@@ -78,7 +78,7 @@ public:
     for (;;) {
       auto result = Parse<Rest>(
           boost::make_iterator_range(prior_success.back(), last), args...);
-      if (!result.error()) {
+      if (result.ok()) {
         return result;
       }
       if (result.error() == ParseError::INCOMPLETE) {
