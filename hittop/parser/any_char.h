@@ -12,7 +12,7 @@ namespace parser {
 
 struct AnyChar {};
 
-template <> struct SingleCharRule<AnyChar> : std::true_type {};
+template <> struct IsSingleCharRule<AnyChar> : std::true_type {};
 
 template <> class Parser<AnyChar> {
 public:

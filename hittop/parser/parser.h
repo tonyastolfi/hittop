@@ -8,6 +8,7 @@
 #include "boost/range/as_literal.hpp"
 
 #include "hittop/parser/parse_error.h"
+#include "hittop/parser/traits.h"
 
 #include "hittop/util/fallible.h"
 #include "hittop/util/is_callable.h"
@@ -22,6 +23,12 @@ using util::Fallible;
 // grammars.
 template <typename Grammar> class Parser;
 
+// Optimizations are implemented as partial or full template specializations of
+// this template.  By default, all parsers are unoptimized.
+//
+template <typename T> struct OptimizedParser : Parser<T> {};
+
+// Passed to visitors during a parse.
 template <typename Grammar, typename Range> struct ParserRunner {
   using iterator = decltype(std::begin(std::declval<Range>()));
   using output_range_type = boost::iterator_range<iterator>;
@@ -65,6 +72,15 @@ auto Parse(const Range &input, Args &&... args)
     -> decltype(std::declval<Parser<Grammar>>()(input)) {
   Parser<Grammar> parser;
   return parser(input, std::forward<Args>(args)...);
+}
+
+// If there are no visitors to match sub-rules of this Grammar, then we can
+// transparently apply optimizations, including ones which re-write the Grammar.
+template <typename Grammar, typename Range>
+auto Parse(const Range &input)
+    -> decltype(std::declval<Parser<Grammar>>()(input)) {
+  OptimizedParser<Grammar> parser;
+  return parser(input);
 }
 
 // Convenience function that parses a C string as a literal character range.

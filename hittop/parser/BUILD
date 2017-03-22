@@ -5,6 +5,7 @@ cc_library(
         "at_least.h",
         "at_most.h",
         "between.h",
+        "char_class.h",
         "char_filter.h",
         "concat.h",
         "either.h",
@@ -24,6 +25,7 @@ cc_library(
         "success.h",
         "token.h",
         "trace_visitor.h",
+        "traits.h",
         "trim.h",
         "unless.h",
     ],
@@ -50,7 +52,6 @@ cc_test(
         "between-test.cc",
         "char_filter-test.cc",
         "concat-test.cc",
-        "either-test.cc",
         "exactly-test.cc",
         "failure-test.cc",
         "forward_ref-test.cc",
@@ -82,6 +83,22 @@ cc_test(
     name = "repeat_and_then-test",
     srcs = [
         "repeat_and_then-test.cc",
+    ],
+    copts = [
+        "-Iexternal/gtest/include",
+        "-std=c++14",
+    ],
+    deps = [
+        "@gtest//:main",
+        ":parser",
+        "//hittop/util",
+    ],
+)
+
+cc_test(
+    name = "either-test",
+    srcs = [
+        "either-test.cc",
     ],
     copts = [
         "-Iexternal/gtest/include",
