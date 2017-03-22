@@ -12,6 +12,12 @@ namespace parser {
 template <typename RejectGrammar, typename DefaultGrammar> struct Unless {};
 
 template <typename RejectGrammar, typename DefaultGrammar>
+struct IsSingleCharRule<Unless<RejectGrammar, DefaultGrammar>>
+    : std::integral_constant<bool,
+                             IsSingleCharRule<RejectGrammar>::value &&
+                                 IsSingleCharRule<DefaultGrammar>::value> {};
+
+template <typename RejectGrammar, typename DefaultGrammar>
 class Parser<Unless<RejectGrammar, DefaultGrammar>> {
 public:
   template <typename Range, typename... Args>

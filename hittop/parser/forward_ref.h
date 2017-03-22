@@ -11,6 +11,10 @@ namespace parser {
 template <typename GrammarMetaFunction> struct ForwardRef {};
 
 template <typename GrammarMetaFunction>
+struct IsSingleCharRule<ForwardRef<GrammarMetaFunction>>
+    : IsSingleCharRule<typename GrammarMetaFunction::type> {};
+
+template <typename GrammarMetaFunction>
 class Parser<ForwardRef<GrammarMetaFunction>>
     : public Parser<typename GrammarMetaFunction::type> {};
 

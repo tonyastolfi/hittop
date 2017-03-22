@@ -12,6 +12,8 @@ namespace parser {
 
 struct AnyChar {};
 
+template <> struct SingleCharRule<AnyChar> : std::true_type {};
+
 template <> class Parser<AnyChar> {
 public:
   template <typename Range, typename... Args>

@@ -16,6 +16,8 @@ namespace parser {
  */
 template <char... Ch> struct Literal {};
 
+template <char Ch> struct IsSingleCharRule<Literal<Ch>> : std::true_type {};
+
 /// Parse implementation for Literal (base case).
 template <char Ch> class Parser<Literal<Ch>> {
 public:

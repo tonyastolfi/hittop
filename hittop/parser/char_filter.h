@@ -21,6 +21,8 @@ using CharFilterFunction = decltype(                         //
 
 template <CharFilterFunction F> struct CharFilter {};
 
+template <> struct IsSingleCharRule<CharFilter> : std::true_type {};
+
 template <CharFilterFunction F> class Parser<CharFilter<F>> {
 public:
   template <typename Range, typename... Args>

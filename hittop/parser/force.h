@@ -10,6 +10,9 @@ namespace parser {
 
 template <typename Grammar> struct Force {};
 
+template <typename Grammar>
+struct IsSingleCharRule<Force<Grammar>> : IsSingleCharRule<Grammar> {};
+
 template <typename Grammar> class Parser<Force<Grammar>> {
 public:
   template <typename Range, typename... Args>
