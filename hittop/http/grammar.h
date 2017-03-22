@@ -259,12 +259,12 @@ DEFINE_TOKEN(DELETE);
 DEFINE_TOKEN(TRACE);
 DEFINE_TOKEN(CONNECT);
 
-using HttpMethod = parser::Either<OPTIONS, //
-                                  GET,     //
-                                  HEAD,    //
+using HttpMethod = parser::Either<GET,     //
                                   POST,    //
                                   PUT,     //
                                   DELETE,  //
+                                  OPTIONS, //
+                                  HEAD,    //
                                   TRACE,   //
                                   CONNECT  //
                                   >;
