@@ -17,6 +17,7 @@ bool initialize_xdigit_values() {
       v[n] = 0;
     }
   }
+  return true;
 }
 } // namespace
 
