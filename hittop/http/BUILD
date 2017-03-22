@@ -4,6 +4,7 @@ cc_library(
         "basic_header.h",
         "basic_request.h",
         "grammar.h",
+        "parse_request.h",
         "request.h",
         "request_parse_visitor.h",
     ],
@@ -59,5 +60,24 @@ cc_test(
         "//hittop/util",
         "//hittop/util:functional",
         "//hittop/util:test_util",
+    ],
+)
+
+cc_binary(
+    name = "parse_request_bench",
+    srcs = [
+        "parse_request_bench.cc"
+    ],
+    copts = [
+        "-std=c++14",
+    ],
+    linkopts = [
+        "-lprofiler",
+        "-ltcmalloc",
+        "-Wl,-no_pie",
+    ],
+    deps = [
+        ":http",
+        "@boost_1_62_0//:headers",
     ],
 )
