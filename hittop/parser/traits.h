@@ -45,6 +45,9 @@ struct TrueForAny<Predicate, T, U...>
 
 template <typename T> struct IsSingleCharRule : std::false_type {};
 
+template <typename> struct SingleArgType;
+template <typename T> struct SingleArgType<void(T)> { using type = T; };
+
 } // namespace parser
 } // namespace hittop
 

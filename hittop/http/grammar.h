@@ -29,12 +29,14 @@ using DIGIT = parser::CharFilter<&std::isdigit>;
 
 using SP = parser::Literal<' '>;
 
-using CRLF = parser::Concat<parser::Literal<'\r'>, parser::Literal<'\n'>>;
+DEF_PARSE_RULE(CRLF,
+               (parser::Concat<parser::Literal<'\r'>, parser::Literal<'\n'>>));
 
-using LWS =
-    parser::Concat<parser::Opt<CRLF>,
+DEF_PARSE_RULE(LWS,
+               (parser::Concat<
+                   parser::Opt<CRLF>,
                    parser::AtLeast<1, parser::Either<parser::Literal<' '>,
-                                                     parser::Literal<'\t'>>>>;
+                                                     parser::Literal<'\t'>>>>));
 
 using separators = parser::Either<
     parser::Literal<'('>, parser::Literal<')'>, parser::Literal<'<'>,
