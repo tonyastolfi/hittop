@@ -21,7 +21,7 @@ TEST(ParseRequestTest, ChromeRequest) {
   Request request;
   RequestParseVisitor v(&request);
   auto result = Parse<http::Request>(input, v);
-  EXPECT_FALSE(result.error());
+  EXPECT_TRUE(result.ok());
   EXPECT_EQ(request.http_method(), ::hittop::http::HttpMethod::GET);
   EXPECT_EQ(RangeToString(request.uri()), "/path/to/resource?foo=bar#myfrag");
   EXPECT_FALSE(request.uri().scheme());

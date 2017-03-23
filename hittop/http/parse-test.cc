@@ -28,22 +28,22 @@ protected:
     return [headers](http::message_header, auto &&run_parser) {
       typename Assoc::key_type name;
       typename Assoc::key_type value;
-      if (!run_parser(FirstMatch(
-                          [&name](http::field_name, auto &&run_parser) {
-                            auto result = run_parser();
-                            if (result.ok()) {
-                              name.assign(std::begin(result.get()),
-                                          std::end(result.get()));
-                            }
-                          },
-                          [&value](http::field_value, auto &&run_parser) {
-                            auto result = run_parser();
-                            if (result.ok()) {
-                              value.assign(std::begin(result.get()),
-                                           std::end(result.get()));
-                            }
-                          }))
-               .error()) {
+
+      auto result = run_parser(FirstMatch(
+          [&name](http::field_name, auto &&run_parser) {
+            auto result = run_parser();
+            if (result.ok()) {
+              name.assign(std::begin(result.get()), std::end(result.get()));
+            }
+          },
+          [&value](http::field_value, auto &&run_parser) {
+            auto result = run_parser();
+            if (result.ok()) {
+              value.assign(std::begin(result.get()), std::end(result.get()));
+            }
+          }));
+
+      if (result.ok()) {
         headers->emplace(std::move(name), std::move(value));
       }
     };
@@ -54,7 +54,7 @@ protected:
     std::unordered_map<std::string, std::string> headers;
     const std::string input = LoadTestData(input_file);
     auto result = Parse<http::HTTP_message>(input, CaptureHeaders(&headers));
-    EXPECT_FALSE(result.error()) << result.error().message();
+    EXPECT_TRUE(result.ok()) << make_error_condition(result.error()).message();
     EXPECT_EQ(std::distance(input.cbegin(), result.get()), expected_size);
     return headers;
   }

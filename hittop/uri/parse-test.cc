@@ -23,7 +23,7 @@ TEST_F(UriParseVisitorTest, Example1) {
   auto result = Parse<::hittop::uri::grammar::URI_reference>(
       input, MakeUriParseVisitor(&uri));
 
-  EXPECT_FALSE(result.error());
+  EXPECT_TRUE(result.ok());
   ASSERT_FALSE(!uri.scheme());
   EXPECT_EQ(uri.scheme().get(), "https");
   EXPECT_FALSE(uri.user());

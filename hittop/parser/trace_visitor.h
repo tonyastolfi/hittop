@@ -65,8 +65,9 @@ template <typename BaseRule> struct BasicTraceVisitor {
           fragment = oss.str();
         }
         (*out) << indent << type_name.get() << " exit (result="
-               << (result.error() ? result.error().message() : "ok") << ")"
-               << fragment << std::endl;
+               << (!result.ok() ? make_error_condition(result.error()).message()
+                                : "ok")
+               << ")" << fragment << std::endl;
         *nesting -= 2;
       }
     });

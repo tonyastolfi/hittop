@@ -13,6 +13,7 @@
 #include "hittop/parser/token.h"
 
 using ::hittop::parser::Parse;
+using ::hittop::parser::ParseError;
 using ::hittop::parser::CharFilter;
 using ::hittop::parser::Concat;
 using ::hittop::parser::Repeat;
@@ -40,7 +41,7 @@ using CorrectBacktrackGrammar =
 TEST(RepeatAndThenTest, ConcatRepeatFails) {
   std::string in = "a1b2c3d!";
   auto result = Parse<BadGrammar>(in);
-  EXPECT_FALSE(result.ok());
+  EXPECT_EQ(result.error(), ParseError::BAD_CHAR);
   EXPECT_EQ(std::prev(in.end()), result.get());
 }
 
@@ -75,6 +76,6 @@ TEST(RepeatAndThenTest, BacktrackOk) {
 TEST(RepeatAndThenTest, BacktrackFail) {
   std::string in = "abcdefgfoo!";
   auto result = Parse<CorrectBacktrackGrammar>(in);
-  EXPECT_TRUE(result.ok());
+  EXPECT_EQ(result.error(), ParseError::BAD_CHAR);
   EXPECT_EQ(in.begin(), result.get());
 }

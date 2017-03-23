@@ -35,9 +35,9 @@ TEST_F(UriGrammarTest, Example1) {
 
   auto result = Parse<uri::URI_reference>(input, v);
   EXPECT_EQ(result.get(), std::prev(input.end()));
-  EXPECT_FALSE(result.error()) << result.error().message() << " at '"
-                               << std::string(result.get(), input.cend())
-                               << "'";
+  EXPECT_TRUE(result.ok()) << make_error_condition(result.error()).message()
+                           << " at '" << std::string(result.get(), input.cend())
+                           << "'";
 }
 
 } // namespace
