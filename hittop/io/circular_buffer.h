@@ -15,52 +15,55 @@ namespace io {
 
 class CircularBuffer {
 public:
-  using mutable_buffers_type = boost::static_vector<mutable_buffer, 2>;
-  using const_buffers_type = boost::static_vector<const_buffer, 2>;
+  using mutable_buffers_type = //
+      boost::container::static_vector<mutable_buffer, 2>;
+
+  using const_buffers_type = //
+      boost::container::static_vector<const_buffer, 2>;
 
   explicit CircularBuffer(const int size_log_2) : storage_(1 << size_log_2) {}
 
   CircularBuffer(const CircularBuffer &) = delete;
   CircularBuffer &operator=(const CircularBuffer &) = delete;
 
-  void commit(const std::size_t bytes) {
-    assert(bytes <= writable_size());
-    write_start_ += bytes;
+  void commit(const std::size_t byte_count) {
+    assert(byte_count <= space());
+    write_head_ += byte_count;
   }
 
-  void consume(const std::size_t bytes) {
-    assert(bytes <= readable_size());
-    read_start_ += bytes;
+  void consume(const std::size_t byte_count) {
+    assert(byte_count <= size());
+    read_head_ += byte_count;
   }
 
   std::size_t max_size() const { return storage_.size(); }
 
-  std::size_t size() const { return write_start_ - read_start_; }
+  std::size_t size() const { return write_head_ - read_head_; }
 
   std::size_t space() const { return max_size() - size(); }
 
   const_buffers_type data() const {
-    assert(write_start_ - read_start_ <= storage_.size());
-    return GetRange<const_buffer>(read_start_ & mask_, size(), storage_);
+    assert(write_head_ - read_head_ <= storage_.size());
+    return GetRange<const_buffer>(read_head_ & mask_, size(), storage_);
   }
 
   mutable_buffers_type prepare() {
-    assert(write_start_ - read_start_ <= storage_.size());
-    return GetRange<mutable_buffer>(write_start_ & mask_, space(), storage_);
+    assert(write_head_ - read_head_ <= storage_.size());
+    return GetRange<mutable_buffer>(write_head_ & mask_, space(), storage_);
   }
 
-  bool empty() const { return read_start_ == write_start_; }
+  bool empty() const { return read_head_ == write_head_; }
 
-  bool full() const { return write_start_ - read_start_ == storage_.size(); }
+  bool full() const { return write_head_ - read_head_ == storage_.size(); }
 
   friend std::ostream &operator<<(std::ostream &os, const CircularBuffer &b) {
-    return os << "buffer(read=" << (b.read_start_ & b.mask_)
-              << ", write=" << (b.write_start_ & b.mask_) << ")";
+    return os << "buffer(read=" << (b.read_head_ & b.mask_)
+              << ", write=" << (b.write_head_ & b.mask_) << ")";
   }
 
 private:
   template <typename Buffer, typename Storage>
-  static boost::static_vector<Buffer, 2>
+  static boost::container::static_vector<Buffer, 2>
   GetRange(std::size_t offset, std::size_t count, Storage &storage) {
     assert(count <= storage.size());
     // When the end of the returned range is before the end of the buffer, just
@@ -78,8 +81,8 @@ private:
 
   std::vector<char> storage_;
   std::size_t mask_ = storage_.size() - 1;
-  std::size_t read_start_ = 0;
-  std::size_t write_start_ = 0; // stays ahead of read start
+  std::size_t read_head_ = 0;
+  std::size_t write_head_ = 0; // stays ahead of read start
 };
 
 } // namespace io

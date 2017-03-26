@@ -54,10 +54,10 @@ protected:
         "max_space() const");
 
     static_assert(
-        std::is_same<std::size_t, decltype(std::declval<const Derived>()
-                                               .max_space())>::value,
+        std::is_same<std::size_t,
+                     decltype(std::declval<const Derived>().space())>::value,
         "AsyncMutableBufferStream must expose a public method std::size_t "
-        "max_space() const");
+        "space() const");
 
     static_assert(std::is_same<void, decltype(std::declval<Derived>().commit(
                                          std::declval<std::size_t>()))>::value,
