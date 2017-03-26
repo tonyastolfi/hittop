@@ -30,12 +30,17 @@ public:
   using PrepareHandler =
       std::function<void(const error_code &, const mutable_buffers_type &)>;
 
-  explicit AsyncCircularBufferStream(const int size_log_2)
+  explicit AsyncCircularBufferStream(const int size_log_2 = 12)
       : buffer_(size_log_2) {}
 
   // Disable copying
   AsyncCircularBufferStream(const CircularBuffer &) = delete;
   AsyncCircularBufferStream &operator=(const CircularBuffer &) = delete;
+
+  ~AsyncCircularBufferStream() {
+    close_for_read();
+    close_for_write();
+  }
 
   std::size_t max_space() const {
     std::unique_lock<std::mutex> lock(mutex_);
@@ -191,7 +196,36 @@ public:
   }
 
   void close_for_read() {
-    // TODO!
+    namespace error = boost::asio::error;
+
+    with_mutex_locked([&]() -> Action {
+      if (closed_for_read_) {
+        return {};
+      }
+
+      closed_for_read_ = true;
+      if (fetch_handler_) {
+        if (prepare_handler_) {
+          return [
+            fetch_handler = std::move(fetch_handler_),
+            prepare_handler = std::move(prepare_handler_)
+          ]() {
+            fetch_handler(error::operation_aborted, {});
+            prepare_handler(error::broken_pipe, {});
+          };
+        } else {
+          return [fetch_handler = std::move(fetch_handler_)]() {
+            fetch_handler(error::operation_aborted, {});
+          };
+        }
+      } else if (prepare_handler_) {
+        return [prepare_handler = std::move(prepare_handler_)]() {
+          prepare_handler(error::broken_pipe, {});
+        };
+      } else {
+        return {};
+      }
+    });
   }
 
 private:
