@@ -1,6 +1,7 @@
 #ifndef HITTOP_IO_ASYNC_CIRCULAR_BUFFER_STREAM_H
 #define HITTOP_IO_ASYNC_CIRCULAR_BUFFER_STREAM_H
 
+#include <assert.h>
 #include <functional>
 #include <mutex>
 
@@ -68,19 +69,22 @@ public:
       } else if (closed_for_read_) {
         // Tried to write, but the other side has shut down.
         return [&handler]() { handler(error::broken_pipe, {}); };
-      } else if (prepare_handler_) {
+      } else if (write_in_progress_) {
         // There is already a write operation in progress.
         return [&handler]() { handler(error::already_started, {}); };
-      } else if (buffer_.space() < minimum_size) {
-        // Not enough space in the buffer; wait for data to be read.
-        minimum_to_fetch_ = minimum_size;
-        prepare_handler_ = handler;
-        return {};
       } else {
-        // Success!
-        return [ buffers = buffer_.prepare(), &handler ]() {
-          handler({}, buffers);
-        };
+        write_in_progress_ = true;
+        if (buffer_.space() < minimum_size) {
+          // Not enough space in the buffer; wait for data to be read.
+          minimum_to_prepare_ = minimum_size;
+          prepare_handler_ = handler;
+          return {};
+        } else {
+          // Success!
+          return [ buffers = buffer_.prepare(), &handler ]() {
+            handler({}, buffers);
+          };
+        }
       }
     });
   }
@@ -88,13 +92,17 @@ public:
   void commit(const std::size_t byte_count) {
     with_mutex_locked([&]() -> Action {
       assert(byte_count <= buffer_.space());
+      assert(write_in_progress_);
       buffer_.commit(byte_count);
+      write_in_progress_ = false;
       if (fetch_handler_ && buffer_.size() >= minimum_to_fetch_) {
-        return [
+        auto action = [
           handler = std::move(fetch_handler_), buffers = buffer_.data()
         ]() {
           handler({}, buffers);
         };
+        fetch_handler_ = nullptr;
+        return std::move(action);
       } else {
         return {};
       }
@@ -111,22 +119,32 @@ public:
       closed_for_write_ = true;
       if (fetch_handler_) {
         if (prepare_handler_) {
-          return [
+          auto action = [
             prepare_handler = std::move(prepare_handler_),
             fetch_handler = std::move(fetch_handler_)
           ]() {
-            prepare_handler(error::operation_aborted, {});
-            fetch_handler(error::broken_pipe, {});
+            prepare_handler(error::shut_down, {});
+            fetch_handler(error::eof, {});
           };
+          prepare_handler_ = nullptr;
+          fetch_handler_ = nullptr;
+          read_in_progress_ = write_in_progress_ = false;
+          return std::move(action);
         } else {
-          return [fetch_handler = std::move(fetch_handler_)]() {
-            fetch_handler(error::broken_pipe, {});
+          auto action = [fetch_handler = std::move(fetch_handler_)]() {
+            fetch_handler(error::eof, {});
           };
+          fetch_handler_ = nullptr;
+          read_in_progress_ = false;
+          return std::move(action);
         }
       } else if (prepare_handler_) {
-        return [prepare_handler = std::move(prepare_handler_)]() {
-          prepare_handler(error::operation_aborted, {});
+        auto action = [prepare_handler = std::move(prepare_handler_)]() {
+          prepare_handler(error::shut_down, {});
         };
+        prepare_handler_ = nullptr;
+        write_in_progress_ = false;
+        return action;
       } else {
         return {};
       }
@@ -156,7 +174,7 @@ public:
       if (closed_for_read_) {
         // Tried to read after closing for read.
         return [&handler]() { handler(error::shut_down, {}); };
-      } else if (fetch_handler_) {
+      } else if (read_in_progress_) {
         // There is already a fetch operation in progress.
         return [&handler]() { handler(error::already_started, {}); };
       } else if (minimum_size > buffer_.size()) {
@@ -166,12 +184,14 @@ public:
           return [&handler]() { handler(error::eof, {}); };
         } else {
           // Not enough data; have to wait.
+          read_in_progress_ = true;
           minimum_to_fetch_ = minimum_size;
           fetch_handler_ = handler;
           return {};
         }
       } else {
         // Success!
+        read_in_progress_ = true;
         return [ buffers = buffer_.data(), &handler ]() {
           handler({}, buffers);
         };
@@ -182,13 +202,17 @@ public:
   void consume(std::size_t byte_count) {
     with_mutex_locked([&]() -> Action {
       assert(byte_count <= buffer_.size());
+      assert(read_in_progress_);
       buffer_.consume(byte_count);
+      read_in_progress_ = false;
       if (prepare_handler_ && minimum_to_prepare_ <= buffer_.space()) {
-        return [
+        auto action = [
           handler = std::move(prepare_handler_), buffers = buffer_.prepare()
         ]() {
           handler({}, buffers);
         };
+        prepare_handler_ = nullptr;
+        return std::move(action);
       } else {
         return {};
       }
@@ -206,22 +230,29 @@ public:
       closed_for_read_ = true;
       if (fetch_handler_) {
         if (prepare_handler_) {
-          return [
+          auto action = [
             fetch_handler = std::move(fetch_handler_),
             prepare_handler = std::move(prepare_handler_)
           ]() {
-            fetch_handler(error::operation_aborted, {});
+            fetch_handler(error::shut_down, {});
             prepare_handler(error::broken_pipe, {});
           };
+          fetch_handler_ = nullptr;
+          prepare_handler_ = nullptr;
+          return std::move(action);
         } else {
-          return [fetch_handler = std::move(fetch_handler_)]() {
-            fetch_handler(error::operation_aborted, {});
+          auto action = [fetch_handler = std::move(fetch_handler_)]() {
+            fetch_handler(error::shut_down, {});
           };
+          fetch_handler_ = nullptr;
+          return std::move(action);
         }
       } else if (prepare_handler_) {
-        return [prepare_handler = std::move(prepare_handler_)]() {
+        auto action = [prepare_handler = std::move(prepare_handler_)]() {
           prepare_handler(error::broken_pipe, {});
         };
+        prepare_handler_ = nullptr;
+        return std::move(action);
       } else {
         return {};
       }
@@ -242,6 +273,8 @@ private:
 
   CircularBuffer buffer_;
   mutable std::mutex mutex_;
+  bool write_in_progress_ = false;
+  bool read_in_progress_ = false;
   bool closed_for_read_ = false;
   bool closed_for_write_ = false;
   std::size_t minimum_to_fetch_;

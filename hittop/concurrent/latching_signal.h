@@ -42,7 +42,7 @@ private:
   struct GetSingleArgVisitor : boost::static_visitor<const ArgType<I> *> {
     const ArgType<I> *operator()(const Signal &) const { return nullptr; }
     const ArgType<I> *operator()(const ArgsTuple &args) const {
-      return std::get<I>(&args);
+      return &std::get<I>(args);
     }
   };
 
@@ -183,6 +183,11 @@ public:
   const ArgsTuple *args() const {
     std::unique_lock<std::mutex> lock(mutex_);
     return boost::apply_visitor(GetArgsVisitor{}, *state_);
+  }
+
+  void reset() {
+    std::unique_lock<std::mutex> lock(mutex_);
+    state_.emplace();
   }
 
 private:

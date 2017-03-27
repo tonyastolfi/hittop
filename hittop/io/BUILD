@@ -32,5 +32,6 @@ cc_test(
     deps = [
         "@gtest//:main",
         ":io",
+        "//hittop/concurrent"
     ],
 )
