@@ -23,9 +23,8 @@ public:
       wrapped = std::forward<F>(f)
     ](auto &&... args) {
       prev_pair->RunSecond([
-        action = [ wrapped = std::forward<F>(wrapped), args... ]() {
-          std::forward<F>(wrapped)(args...);
-        },
+        action =
+            [ wrapped = std::move(wrapped), args... ]() { wrapped(args...); },
         next_pair = std::move(next_pair)
       ]() { next_pair->RunFirst(std::move(action)); });
     };

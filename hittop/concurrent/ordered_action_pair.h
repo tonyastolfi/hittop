@@ -27,6 +27,7 @@ public:
     for (;;) {
       if (current == kRunFirstCallsSecond) {
         second_();
+        return;
       } else {
         if (state_.compare_exchange_weak(current, kRunSecondCallsSecond,
                                          std::memory_order_acq_rel)) {
