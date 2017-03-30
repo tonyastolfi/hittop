@@ -10,6 +10,9 @@
 namespace hittop {
 namespace concurrent {
 
+// Enforces ordering on two actions.  An action is considered any callable type
+// that takes no arguments (return value is ignored).
+//
 class OrderedActionPair
     : public boost::intrusive_ref_counter<OrderedActionPair> {
 public:
@@ -21,13 +24,15 @@ public:
 
   OrderedActionPair() { state_ = kInitial; }
 
+  // Call f() and either call the action passed to RunSecond or arrange for
+  // RunSecond to call its own action when it is called.
+  //
   template <typename F> void RunFirst(F &&f) {
     std::forward<F>(f)();
     char current = state_.load(std::memory_order_acq_rel);
     for (;;) {
       if (current == kRunFirstCallsSecond) {
-        second_();
-        return;
+        return second_();
       } else {
         if (state_.compare_exchange_weak(current, kRunSecondCallsSecond,
                                          std::memory_order_acq_rel)) {
@@ -37,11 +42,14 @@ public:
     }
   }
 
+  // Either call g() or arrange for RunFirst to call a copy of g after it has
+  // run the action passed to it.  If g is called by RunSecond, no copy will be
+  // made.
+  //
   template <typename G> void RunSecond(G &&g) {
     char current = state_.load(std::memory_order_acq_rel);
     if (current == kRunSecondCallsSecond) {
-      std::forward<G>(g)();
-      return;
+      return std::forward<G>(g)();
     }
 
     second_ = std::forward<G>(g);
@@ -51,8 +59,7 @@ public:
         return;
       }
       if (current == kRunSecondCallsSecond) {
-        second_();
-        return;
+        return second_();
       }
     }
   }

@@ -10,7 +10,7 @@
 
 namespace {
 
-const std::size_t kNumIterations = 10 * 1000;
+const std::size_t kNumIterations = 1000;
 const std::size_t kNumThreads = 500;
 const std::size_t kNumInserts = 1000;
 
