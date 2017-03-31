@@ -28,14 +28,12 @@ hittop::concurrent::OrderedActionSequence sequence;
 
 // Kick off all calculations using a thread pool.
 for (const auto& in : inputs) {
-  auto insert_result = [&outputs](auto &&result) {
+  auto insert_result = sequence.WrapNext([&outputs](auto &&result) {
     outputs.emplace_back(result);
-  };
+  });
 
-  auto insert_result_in_order = sequence.WrapNext(insert_result);
-
-  thread_pool.Schedule([=]() {
-    insert_result_in_order(calculate(in));
+  thread_pool.Schedule([insert_result, in]() {
+    insert_result(calculate(in));
   });
 }
 
