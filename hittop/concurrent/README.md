@@ -1,9 +1,9 @@
-= HiTToP Concurrency Library =
+# HiTToP Concurrency Library
 
 Contains modern C++ concurrency primitives designed for use in architectures
 making heavy use of asynchronous I/O, processing.
 
-== OrderedActionPair, OrderedActionSequence ==
+## OrderedActionPair, OrderedActionSequence
 
 These primitives solve the problem where one or more actions may be ready to
 perform in an unspecified order, but are must be performed in a specific order.
@@ -93,22 +93,23 @@ class OrderedActionPair {
 }
 ```
 
-The implementation of OrderedActionSequence works by composing OrderedActionPair
-objects together in a kind of linked list.  The general principle is that each
-action in the sequence is the first action of the next ordered pair, run as the
-second action of the previous ordered pair.  (As an aside, a simple mistake
-in doing this composition is to reverse the nesting, to make each ordered action
-in the sequence the second action of the previous pair, run as the first action
-of the next pair.  This doesn't work because running the first action of an
-ordered pair is always immediate; in order words, this fails to respect the
-ordering constraint that each action in the sequence be performed _strictly
-after_ all of the preceeding actions.)
+The implementation of `OrderedActionSequence` works by composing
+`OrderedActionPair` objects together in a kind of linked list.  The general
+principle is that each action in the sequence is the first action of the next
+ordered pair, run as the second action of the previous ordered pair.
+
+(As an aside, a simple mistake in doing this composition is to reverse the
+nesting, to make each ordered action in the sequence the second action of the
+previous pair, run as the first action of the next pair.  This doesn't work
+because running the first action of an ordered pair is always immediate; in
+order words, this fails to respect the ordering constraint that each action in
+the sequence be performed _strictly after_ all of the preceeding actions.)
 
 The naive implementation of this composition introduces a suble bug/limitation
 wherein a worst case invocation order of the wrapped actions in a sequence
 can defer the running of all actions until the final call, essentially building
 up a linked list of all the actions which is stored in the 'g' field of the
-first OrderedActionPair.  If these are executed recursively, as they would in
+first `OrderedActionPair`.  If these are executed recursively, as they would in
 the pseudo-C++ above, it would surely result in a stack overflow.
 
 The solution is derived from observing that all calls to 'g' appear as tail
