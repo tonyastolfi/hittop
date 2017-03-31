@@ -10,9 +10,11 @@
 
 namespace {
 
-const std::size_t kNumIterations = 1000;
-const std::size_t kNumThreads = 500;
-const std::size_t kNumInserts = 10 * 1000;
+const std::size_t kNumIterations = 100;
+const std::size_t kNumThreads = 1000;
+// Purposely make this large enough so that if our pseudo-TCO isn't working
+// right, we'll definitely blow out the thread stack(s).
+const std::size_t kNumInserts = 100 * 1000;
 
 using ::hittop::concurrent::OrderedActionSequence;
 

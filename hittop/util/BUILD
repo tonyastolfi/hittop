@@ -7,6 +7,7 @@ cc_library(
         "load_file_as_string.h",
         "range_to_string.h",
         "scope_exit.h",
+        "tail_call.h",
         "type_traits.h",
     ],
     srcs = [

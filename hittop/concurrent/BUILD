@@ -7,7 +7,6 @@ cc_library(
         "null_mutex.h",
         "ordered_action_pair.h",
         "ordered_action_sequence.h",
-        "tail_call.h",
     ],
     srcs = [
     ],

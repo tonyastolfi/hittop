@@ -1,11 +1,11 @@
-#ifndef HITTOP_CONCURRENT_TAIL_CALL_H
-#define HITTOP_CONCURRENT_TAIL_CALL_H
+#ifndef HITTOP_UTIL_TAIL_CALL_H
+#define HITTOP_UTIL_TAIL_CALL_H
 
 #include <functional>
 #include <type_traits>
 
 namespace hittop {
-namespace concurrent {
+namespace util {
 
 class TailCall {
 public:
@@ -47,11 +47,13 @@ public:
   TailCall operator()() const & { return k_(); }
   TailCall operator()() const && { return k_(); }
 
+  void swap(TailCall &that) { k_.swap(that.k_); }
+
 private:
   std::function<TailCall()> k_;
 };
 
-} // namespace concurrent
+} // namespace util
 } // namespace hittop
 
-#endif // HITTOP_CONCURRENT_TAIL_CALL_H
+#endif // HITTOP_UTIL_TAIL_CALL_H

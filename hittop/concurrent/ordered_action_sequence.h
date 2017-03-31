@@ -19,18 +19,20 @@ public:
   // will invoke f after all previous actions in this sequence have run.
   //
   template <typename F> auto WrapNext(F &&f) {
+    using util::TailCall;
+
     boost::intrusive_ptr<OrderedActionPair> next_pair{new OrderedActionPair};
     boost::intrusive_ptr<OrderedActionPair> prev_pair = next_pair;
     current_pair_.swap(prev_pair);
+    //
+    // At this point, prev_pair is the old value of this->current_pair_, and
+    // both this->current_pair_ and next_pair are the newly created
+    // OrderedActionPair object.
+
     return [
       next_pair = std::move(next_pair), prev_pair = std::move(prev_pair),
       wrapped = std::forward<F>(f)
     ](auto &&... args) {
-      // TODO - this could very easily blow out the stack in its current form if
-      // the number of out-of-order items in the sequence gets too large.
-      // Implement some kind of stack trampoline to work around this issue (lack
-      // of TCO, doah!)
-      //
       TailCall tc = prev_pair->RunSecondTC([
         action = [ wrapped = std::move(wrapped), args... ]() {
           return wrapped(args...);
