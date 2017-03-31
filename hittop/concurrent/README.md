@@ -3,7 +3,7 @@
 Contains modern C++ concurrency primitives designed for use in architectures
 making heavy use of asynchronous I/O, processing.
 
-== ConcurrentActionPair, ConcurrentActionSequence ==
+== OrderedActionPair, OrderedActionSequence ==
 
 These primitives solve the problem where one or more actions may be ready to
 perform in an unspecified order, but are must be performed in a specific order.
@@ -65,12 +65,12 @@ class OrderedActionPair {
 
   RunFirst(f) {
     f();
-    current = state.load();
+    observed_state = state.load();
     while (true) {
-      if (current == run_first_calls_both) {
+      if (observed_state == run_first_calls_both) {
         return g();
       } else {
-        if (state.compare_exchange(current, run_second_calls_g)) {
+        if (state.compare_exchange(observed_state, run_second_calls_g)) {
           return;
         }
       }
@@ -78,13 +78,13 @@ class OrderedActionPair {
   }
 
   RunSecond(g) {
-    current = state.load();
+    observed_state = state.load();
     this->g = g;
     while (true) {
-      if (current == run_second_calls_g) {
+      if (observed_state == run_second_calls_g) {
         return g();
       } else {
-        if (state.compare_exchange(current, run_first_calls_both)) {
+        if (state.compare_exchange(observed_state, run_first_calls_both)) {
           return;
         }
       }
