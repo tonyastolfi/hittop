@@ -52,7 +52,7 @@ This can be much more efficient than more general synchronization primitives
 because `OrderedActionPair` and `OrderedActionSequence` use a lock-free,
 wait-free algorithm to ensure proper ordering.  The rough idea is:
 
-```
+```C++
 class OrderedActionPair {
   enum States {
     initial,
