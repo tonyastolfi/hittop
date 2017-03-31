@@ -42,7 +42,7 @@ std::promise<void> p;
 auto signal_done = sequence.WrapAction([&p]() { p.set_value(); });
 signal_done();
 
-std::future<void> done = last_action.get_future();
+std::future<void> done = p.get_future();
 done.wait();
 
 // At this point, the output vector is full.
