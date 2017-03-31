@@ -29,13 +29,17 @@ public:
       // TODO - this could very easily blow out the stack in its current form if
       // the number of out-of-order items in the sequence gets too large.
       // Implement some kind of stack trampoline to work around this issue (lack
-      // of tail calls, doah!)
+      // of TCO, doah!)
       //
-      prev_pair->RunSecond([
-        action =
-            [ wrapped = std::move(wrapped), args... ]() { wrapped(args...); },
+      TailCall tc = prev_pair->RunSecondTC([
+        action = [ wrapped = std::move(wrapped), args... ]() {
+          return wrapped(args...);
+        },
         next_pair = std::move(next_pair)
-      ]() { next_pair->RunFirst(std::move(action)); });
+      ]() { return next_pair->RunFirstTC(std::move(action)); });
+      while (tc) {
+        tc = tc();
+      }
     };
   }
 

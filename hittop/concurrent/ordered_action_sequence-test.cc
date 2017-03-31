@@ -12,7 +12,7 @@ namespace {
 
 const std::size_t kNumIterations = 1000;
 const std::size_t kNumThreads = 500;
-const std::size_t kNumInserts = 1000;
+const std::size_t kNumInserts = 10 * 1000;
 
 using ::hittop::concurrent::OrderedActionSequence;
 

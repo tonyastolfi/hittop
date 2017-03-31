@@ -7,6 +7,8 @@
 
 #include "boost/smart_ptr/intrusive_ref_counter.hpp"
 
+#include "hittop/concurrent/tail_call.h"
+
 namespace hittop {
 namespace concurrent {
 
@@ -32,11 +34,27 @@ public:
     char current = state_.load(std::memory_order_acq_rel);
     for (;;) {
       if (current == kRunFirstCallsSecond) {
-        return second_();
+        second_();
+        return;
       } else {
         if (state_.compare_exchange_weak(current, kRunSecondCallsSecond,
                                          std::memory_order_acq_rel)) {
           return;
+        }
+      }
+    }
+  }
+
+  template <typename F> TailCall RunFirstTC(F &&f) {
+    std::forward<F>(f)();
+    char current = state_.load(std::memory_order_acq_rel);
+    for (;;) {
+      if (current == kRunFirstCallsSecond) {
+        return second_;
+      } else {
+        if (state_.compare_exchange_weak(current, kRunSecondCallsSecond,
+                                         std::memory_order_acq_rel)) {
+          return {};
         }
       }
     }
@@ -59,14 +77,33 @@ public:
         return;
       }
       if (current == kRunSecondCallsSecond) {
-        return second_();
+        second_();
+        return;
+      }
+    }
+  }
+
+  template <typename G> TailCall RunSecondTC(G &&g) {
+    char current = state_.load(std::memory_order_acq_rel);
+    if (current == kRunSecondCallsSecond) {
+      return g;
+    }
+
+    second_ = std::forward<G>(g);
+    for (;;) {
+      if (state_.compare_exchange_weak(current, kRunFirstCallsSecond,
+                                       std::memory_order_acq_rel)) {
+        return {};
+      }
+      if (current == kRunSecondCallsSecond) {
+        return second_;
       }
     }
   }
 
 private:
   std::atomic<char> state_;
-  std::function<void()> second_;
+  TailCall second_;
 };
 
 } // namespace concurrent

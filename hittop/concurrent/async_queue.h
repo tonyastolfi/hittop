@@ -27,7 +27,7 @@ namespace concurrent {
 //   1. serialize all pushes according to the desired order
 //   2. only allow one pending async_pop operation at a time
 //
-template <typename T> class AsyncQueue {
+template <typename T, typename Mutex = std::mutex> class AsyncQueue {
 public:
   using PopCanceler = std::function<bool()>;
 
@@ -42,7 +42,7 @@ public:
   template <typename F> PopCanceler async_pop(F &&handler) {
     boost::optional<T> item;
     {
-      std::unique_lock<std::mutex> lock(mutex_);
+      std::unique_lock<Mutex> lock(mutex_);
       if (!inventory_.empty()) {
         item = std::move(inventory_.front());
         inventory_.pop_front();
@@ -128,7 +128,7 @@ private:
 
   template <typename Op, typename A> void GenericInsert(A &&a) {
     Op op(this, std::forward<A>(a));
-    std::unique_lock<std::mutex> lock(mutex_);
+    std::unique_lock<Mutex> lock(mutex_);
     while (!consumers_.empty()) {
       boost::intrusive_ptr<Consumer> consumer = std::move(consumers_.front());
       consumers_.pop_front();
@@ -141,7 +141,7 @@ private:
     op.Insert();
   }
 
-  std::mutex mutex_;
+  Mutex mutex_;
   std::deque<T> inventory_;
   std::deque<boost::intrusive_ptr<Consumer>> consumers_;
 };
