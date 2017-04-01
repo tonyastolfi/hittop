@@ -110,7 +110,7 @@ public:
   template <typename F>
   void operator()(grammar::StringContents, F &&run_parser) const {
     auto result = run_parser();
-    if (!result.error()) {
+    if (result.ok()) {
       *output_ = internal::UnescapeUnsafe(result.get());
     }
   }
@@ -118,21 +118,21 @@ public:
   template <typename F>
   void operator()(grammar::Boolean, F &&run_parser) const {
     auto result = run_parser();
-    if (!result.error()) {
+    if (result.ok()) {
       *output_ = Boolean{*std::begin(result.get()) == 't'};
     }
   }
 
   template <typename F> void operator()(grammar::Number, F &&run_parser) const {
     auto result = run_parser();
-    if (!result.error()) {
+    if (result.ok()) {
       *output_ = std::stod(util::RangeToString(result.get()));
     }
   }
 
   template <typename F> void operator()(grammar::Null, F &&run_parser) const {
     auto result = run_parser();
-    if (!result.error()) {
+    if (result.ok()) {
       *output_ = Null{};
     }
   }
@@ -143,11 +143,11 @@ public:
       Value next_item;
       ValueParseVisitor item_visitor{&next_item};
       auto item_result = get_item_result(item_visitor);
-      if (!item_result.error()) {
+      if (item_result.ok()) {
         items.emplace_back(std::move(next_item));
       }
     });
-    if (!result.error()) {
+    if (result.ok()) {
       *output_ = std::move(items);
     }
   }
@@ -160,7 +160,7 @@ public:
           get_property_result(util::FirstMatch(
               [&name](grammar::StringContents, auto get_name_result) {
                 auto name_result = get_name_result();
-                if (!name_result.error()) {
+                if (name_result.ok()) {
                   name = internal::UnescapeUnsafe(name_result.get());
                 }
               },
@@ -168,13 +168,13 @@ public:
                 Value property;
                 ValueParseVisitor property_visitor{&property};
                 auto value_result = get_value_result(property_visitor);
-                if (!value_result.error()) {
+                if (value_result.ok()) {
                   object.emplace(
                       std::make_pair(std::move(name), std::move(property)));
                 }
               }));
         });
-    if (!result.error()) {
+    if (result.ok()) {
       *output_ = std::move(object);
     }
   }

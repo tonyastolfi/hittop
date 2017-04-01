@@ -28,28 +28,29 @@ namespace grammar = hittop::json::grammar;
 TEST(ParseJson, OkBooleanTrue) {
   const char *const input = "true";
   auto result = Parse<grammar::Boolean>(input);
-  EXPECT_FALSE(result.error());
+  EXPECT_TRUE(result.ok());
   EXPECT_EQ(result.get(), input + 4);
 }
 
 TEST(ParseJson, OkBooleanFalse) {
   const char *const input = "false";
   auto result = Parse<grammar::Boolean>(input);
-  EXPECT_FALSE(result.error());
+  EXPECT_TRUE(result.ok());
   EXPECT_EQ(result.get(), input + 5);
 }
 
 TEST(ParseJson, OkBooleanWithSpace) {
   const char *const input = " false  ";
   auto result = Parse<grammar::Boolean>(input);
-  EXPECT_FALSE(result.error());
+  EXPECT_TRUE(result.ok());
   EXPECT_EQ(result.get(), input + 8);
 }
 
 TEST(ParseJson, OkTestDataFile) {
   auto input = LoadTestData("/hittop/json/test-data.json");
   auto result = Parse<grammar::Value>(input);
-  EXPECT_FALSE(result.error()) << "Actual error: " << result.error().message();
+  EXPECT_TRUE(result.ok()) << "Actual error: "
+                           << make_error_condition(result.error()).message();
   EXPECT_EQ(result.get(), input.end());
 }
 
@@ -58,7 +59,8 @@ TEST(ParseJson, ParseSimpleObject) {
   json::Value output;
   json::ValueParseVisitor visitor{&output};
   auto result = Parse<grammar::Value>(input, visitor);
-  EXPECT_FALSE(result.error()) << "Actual error: " << result.error().message();
+  EXPECT_TRUE(result.ok()) << "Actual error: "
+                           << make_error_condition(result.error()).message();
   EXPECT_EQ(result.get(), input.end());
   EXPECT_EQ(output.type(), json::Value::Type::kObject);
   EXPECT_TRUE(static_cast<json::Object &>(output)["a"] == json::Number(1));
@@ -68,7 +70,8 @@ TEST(ParseJson, ParseSimpleObject) {
 TEST(ParseJson, ParseComplexObject) {
   auto input = LoadTestData("/hittop/json/test-data.json");
   auto result = json::ParseValue(input);
-  EXPECT_FALSE(result.error()) << "Actual error: " << result.error().message();
+  EXPECT_TRUE(result.ok()) << "Actual error: "
+                           << make_error_condition(result.error()).message();
 
   json::Value output;
   ConstRangeIterator<decltype(input)>::type last_char_parsed;

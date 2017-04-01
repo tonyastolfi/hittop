@@ -33,7 +33,7 @@ const char kMultiPartDone[] = "abababababax";
 
 TEST(ParseRepeat, OkSingle) {
   auto result = Parse<Repeat<ab_grammar>>(as_literal(kGood));
-  EXPECT_FALSE(result.error());
+  EXPECT_TRUE(result.ok());
   EXPECT_EQ(result.get(), &kGood[2]);
 }
 
@@ -62,14 +62,14 @@ TEST(ParseRepeat, OkZeroErrorOnFirstChar) {
   auto result = Parse<Repeat<ab_grammar>>(as_literal(kBad0));
   // Failure to parse a single instance of the repeated grammar is considered
   //  success.
-  EXPECT_FALSE(result.error());
+  EXPECT_TRUE(result.ok());
   EXPECT_EQ(result.get(), &kBad0[0]);
 }
 
 TEST(ParseRepeat, OkZeroErrorOnSecondChar) {
   auto result = Parse<Repeat<ab_grammar>>(as_literal(kBad1));
   // Repeat never fails other than INCOMPLETE.
-  EXPECT_FALSE(result.error());
+  EXPECT_TRUE(result.ok());
   EXPECT_EQ(result.get(), &kBad1[0]);
 }
 
@@ -81,6 +81,6 @@ TEST(ParseRepeat, IncompleteMany) {
 
 TEST(ParseRepeat, OkMany) {
   auto result = Parse<Repeat<ab_grammar>>(as_literal(kMultiPartDone));
-  EXPECT_FALSE(result.error());
+  EXPECT_TRUE(result.ok());
   EXPECT_EQ(result.get(), &kMultiPartDone[10]);
 }

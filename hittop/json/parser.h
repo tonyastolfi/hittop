@@ -13,7 +13,7 @@ namespace hittop {
 namespace json {
 
 template <typename Iterator>
-using ParseResult = util::Fallible<std::tuple<Value, Iterator>>;
+using ParseResult = parser::ParseResult<std::tuple<Value, Iterator>>;
 
 template <typename Range>
 auto ParseValue(const Range &input)

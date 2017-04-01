@@ -35,13 +35,13 @@ auto RunParser(const char *input)
 
 TEST(TestOpt, OkConsumeAll) {
   auto result = RunParser(kHello);
-  EXPECT_FALSE(result.error());
+  EXPECT_TRUE(result.ok());
   EXPECT_EQ(result.get(), &kHello[5]);
 }
 
 TEST(TestOpt, OkConsumePartial) {
   auto result = RunParser(kHelloHello);
-  EXPECT_FALSE(result.error());
+  EXPECT_TRUE(result.ok());
   EXPECT_EQ(result.get(), &kHelloHello[5]);
 }
 
@@ -59,12 +59,12 @@ TEST(TestOpt, IncompletePartial) {
 
 TEST(TestOpt, OkFailFirstChar) {
   auto result = RunParser(kAloha);
-  EXPECT_FALSE(result.error());
+  EXPECT_TRUE(result.ok());
   EXPECT_EQ(result.get(), &kAloha[0]);
 }
 
 TEST(TestOpt, OkFailMidWay) {
   auto result = RunParser(kHola);
-  EXPECT_FALSE(result.error());
+  EXPECT_TRUE(result.ok());
   EXPECT_EQ(result.get(), &kHola[0]);
 }

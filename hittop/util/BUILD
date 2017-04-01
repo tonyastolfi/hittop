@@ -1,10 +1,13 @@
 cc_library(
     name = "util",
     hdrs = [
+        "boost_iterator_range_helper.h",
         "fallible.h",
+        "hash.h",
         "load_file_as_string.h",
         "range_to_string.h",
         "scope_exit.h",
+        "tail_call.h",
         "type_traits.h",
     ],
     srcs = [
@@ -110,5 +113,64 @@ cc_test(
     deps = [
         "@gtest//:main",
         ":functional",
+    ],
+)
+
+cc_library(
+    name = "abi",
+    hdrs = [
+        "demangle.h",
+    ],
+    copts = [
+        "-std=c++14"
+    ],
+    deps = [
+        "@boost_1_62_0//:headers",
+    ],
+    visibility = ["//visibility:public"]
+)
+
+cc_library(
+    name = "debug",
+    hdrs = [
+        "backtrace.h",
+    ],
+    copts = [
+        "-std=c++14"
+    ],
+    deps = [
+    ],
+    visibility = ["//visibility:public"]
+)
+
+cc_library(
+    name="in_place_factory",
+    hdrs = [
+        "in_place_alloc_factory.h",
+        "saved_in_place_factory.h",
+    ],
+    srcs = [
+    ],
+    copts = ["-std=c++14"],
+    deps = [
+        "@boost_1_62_0//:headers",
+        ":tuples",
+    ],
+    visibility = ["//visibility:public"]
+)
+
+cc_test(
+    name = "in_place_factory-test",
+    srcs = [
+        "in_place_alloc_factory-test.cc",
+        "saved_in_place_factory-test.cc",
+    ],
+    copts = [
+        "-Iexternal/gtest/include",
+        "-std=c++14",
+    ],
+    deps = [
+        "@gtest//:main",
+        ":in_place_factory",
     ],
 )

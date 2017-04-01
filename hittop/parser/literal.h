@@ -16,12 +16,14 @@ namespace parser {
  */
 template <char... Ch> struct Literal {};
 
+template <char Ch> struct IsSingleCharRule<Literal<Ch>> : std::true_type {};
+
 /// Parse implementation for Literal (base case).
 template <char Ch> class Parser<Literal<Ch>> {
 public:
   template <typename Range, typename... Args>
   auto operator()(const Range &input, Args &&...) const
-      -> Fallible<decltype(std::begin(input))> {
+      -> ParseResult<decltype(std::begin(input))> {
     auto next = std::begin(input);
     if (next == std::end(input)) {
       return {std::move(next), ParseError::INCOMPLETE};

@@ -18,7 +18,7 @@ template <> class Parser<Failure> {
 public:
   template <typename Range, typename... Args>
   auto operator()(const Range &input, Args &&...) const
-      -> Fallible<decltype(std::begin(input))> {
+      -> ParseResult<decltype(std::begin(input))> {
     return {std::begin(input), ParseError::UNKNOWN};
   }
 };
