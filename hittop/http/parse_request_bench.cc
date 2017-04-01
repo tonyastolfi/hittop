@@ -40,7 +40,9 @@ int main(int argc, char **argv) {
           boost::make_iterator_range(next, next + request_size), &request);
       if (!result.ok()) {
         std::cerr << "Fail!" << std::endl;
+        return 1;
       }
+      next = result.get();
     }
     auto stop = std::chrono::high_resolution_clock::now();
     double usec =
