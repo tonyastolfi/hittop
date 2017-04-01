@@ -118,8 +118,8 @@ optimization, this wouldn't be a problem as none of those calls would grow the
 stack.  As it is, we must give the compiler a little help by using
 `hittop::util::TailCall`, which is essentially a zero-argument function that
 returns an instance of its own type.  Wherever we have a tail-call in the
-code above, we replace that by returning the unexecuted function/lambda.  Usage
-of this pattern at the top level looks like:
+code above, we replace that by returning the unexecuted function/lambda (i.e.
+the continuation).  Usage of this pattern at the top level looks like:
 
 ```C++
 TailCall tc = pair->RunSecondTC(...); // or RunFirstTC(...)
