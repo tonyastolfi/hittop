@@ -29,7 +29,7 @@ hittop::concurrent::OrderedActionSequence sequence;
 // Kick off all calculations using a thread pool.
 for (const auto& in : inputs) {
   auto insert_result = sequence.WrapNext([&outputs](auto &&result) {
-    outputs.emplace_back(result);
+    outputs.emplace_back(std::move(result));
   });
 
   thread_pool.Schedule([insert_result, in]() {
