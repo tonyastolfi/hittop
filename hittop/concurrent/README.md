@@ -6,7 +6,7 @@ making heavy use of asynchronous I/O, processing.
 ## OrderedActionPair, OrderedActionSequence
 
 These primitives solve the problem where one or more actions may be ready to
-perform in an unspecified order, but are must be performed in a specific order.
+perform in an unspecified order, but must be performed in a specific order.
 For example, perhaps a number of results are being calculated concurrently but
 they need to be inserted into an output queue in a particular order.
 
