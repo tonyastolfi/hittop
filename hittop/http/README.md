@@ -19,26 +19,26 @@ Hardware Overview:
   Serial Number (system):	C02RV153G8WP
   Hardware UUID:	EFB0AB9E-4E9A-538F-A056-6489287D5A7A
 
-$ bazel-bin/hittop/http/parse_request_bench hittop/http/curl_request.bin 100000
-Ok total: 60226usec rps: 1.66041e+06 usec/r: 0.60226
-Ok total: 70494usec rps: 1.41856e+06 usec/r: 0.70494
-Ok total: 62644usec rps: 1.59632e+06 usec/r: 0.62644
-Ok total: 63899usec rps: 1.56497e+06 usec/r: 0.63899
-Ok total: 71412usec rps: 1.40032e+06 usec/r: 0.71412
-Ok total: 61767usec rps: 1.61899e+06 usec/r: 0.61767
-Ok total: 68964usec rps: 1.45003e+06 usec/r: 0.68964
-Ok total: 66560usec rps: 1.5024e+06 usec/r: 0.6656
-Ok total: 69118usec rps: 1.4468e+06 usec/r: 0.69118
-Ok total: 64135usec rps: 1.55921e+06 usec/r: 0.64135
+$ bazel-bin/hittop/http/parse_request_bench hittop/http/curl_request.bin 1000000
+Ok total: 641093usec rps: 1.55984e+06 usec/r: 0.641093
+Ok total: 610716usec rps: 1.63742e+06 usec/r: 0.610716
+Ok total: 615499usec rps: 1.6247e+06 usec/r: 0.615499
+Ok total: 602078usec rps: 1.66091e+06 usec/r: 0.602078
+Ok total: 607252usec rps: 1.64676e+06 usec/r: 0.607252
+Ok total: 621470usec rps: 1.60909e+06 usec/r: 0.62147
+Ok total: 625602usec rps: 1.59846e+06 usec/r: 0.625602
+Ok total: 609310usec rps: 1.6412e+06 usec/r: 0.60931
+Ok total: 627044usec rps: 1.59478e+06 usec/r: 0.627044
+Ok total: 619486usec rps: 1.61424e+06 usec/r: 0.619486
 $ bazel-bin/hittop/http/parse_request_bench hittop/http/chrome_request.bin 1000000
-Ok total: 2.86204e+06usec rps: 349401 usec/r: 2.86204
-Ok total: 2.83768e+06usec rps: 352400 usec/r: 2.83768
-Ok total: 2.85374e+06usec rps: 350418 usec/r: 2.85373
-Ok total: 2.85271e+06usec rps: 350543 usec/r: 2.85271
-Ok total: 2.84911e+06usec rps: 350986 usec/r: 2.84911
-Ok total: 2.90233e+06usec rps: 344551 usec/r: 2.90233
-Ok total: 2.83469e+06usec rps: 352772 usec/r: 2.83469
-Ok total: 2.86118e+06usec rps: 349506 usec/r: 2.86118
-Ok total: 2.86194e+06usec rps: 349413 usec/r: 2.86194
-Ok total: 2.84142e+06usec rps: 351936 usec/r: 2.84142
+Ok total: 3.00333e+06usec rps: 332964 usec/r: 3.00333
+Ok total: 2.97469e+06usec rps: 336169 usec/r: 2.97469
+Ok total: 2.92621e+06usec rps: 341739 usec/r: 2.92621
+Ok total: 2.98293e+06usec rps: 335241 usec/r: 2.98293
+Ok total: 2.97598e+06usec rps: 336024 usec/r: 2.97598
+Ok total: 2.9591e+06usec rps: 337940 usec/r: 2.9591
+Ok total: 2.95619e+06usec rps: 338273 usec/r: 2.95619
+Ok total: 2.99966e+06usec rps: 333371 usec/r: 2.99966
+Ok total: 2.98728e+06usec rps: 334753 usec/r: 2.98728
+Ok total: 2.96984e+06usec rps: 336719 usec/r: 2.96984
 ```
