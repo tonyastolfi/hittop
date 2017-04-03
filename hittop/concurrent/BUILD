@@ -1,8 +1,11 @@
 cc_library(
     name = "concurrent",
     hdrs = [
+        "async_parent_task.h",
         "async_queue.h",
+        "async_task.h",
         "callback_target.h",
+        "error_code.h",
         "latching_signal.h",
         "null_mutex.h",
         "ordered_action_pair.h",
@@ -80,6 +83,11 @@ cc_test(
         "-std=c++14",
         "-ftemplate-backtrace-limit=0",
     ],
+    linkopts = [
+        "-lprofiler",
+        "-ltcmalloc",
+        "-Wl,-no_pie",
+    ],
     deps = [
         ":concurrent",
         "@gtest//:main",
@@ -91,6 +99,24 @@ cc_test(
     name = "null_mutex-test",
     srcs = [
         "null_mutex-test.cc",
+    ],
+    copts = [
+        "-Iexternal/gtest/include",
+        "-std=c++14",
+        "-ftemplate-backtrace-limit=0",
+    ],
+    deps = [
+        ":concurrent",
+        "@gtest//:main",
+        "@boost_1_62_0//:headers",
+    ],
+)
+
+cc_test(
+    name = "async_tasks-test",
+    srcs = [
+        "async_task-test.cc",
+        "async_parent_task-test.cc",
     ],
     copts = [
         "-Iexternal/gtest/include",

@@ -24,6 +24,7 @@ cc_test(
     name = "util-test",
     srcs = [
         "fallible-test.cc",
+        "tail_call-test.cc",
     ],
     copts = [
         "-Iexternal/gtest/include",

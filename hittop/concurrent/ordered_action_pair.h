@@ -42,7 +42,7 @@ public:
   //
   template <typename F> void RunFirst(F &&f) {
     std::forward<F>(f)();
-    char current = state_.load(std::memory_order_acq_rel);
+    char current = state_.load(std::memory_order_acquire);
     for (;;) {
       if (current == kRunFirstCallsSecond) {
         second_();
@@ -71,7 +71,7 @@ public:
   //
   template <typename F> TailCall RunFirstTC(F &&f) {
     std::forward<F>(f)();
-    char current = state_.load(std::memory_order_acq_rel);
+    char current = state_.load(std::memory_order_acquire);
     for (;;) {
       if (current == kRunFirstCallsSecond) {
         TailCall k;
@@ -91,7 +91,7 @@ public:
   // made.
   //
   template <typename G> void RunSecond(G &&g) {
-    char current = state_.load(std::memory_order_acq_rel);
+    char current = state_.load(std::memory_order_acquire);
     if (current == kRunSecondCallsSecond) {
       return std::forward<G>(g)();
     }
@@ -123,7 +123,7 @@ public:
   // "manual" tail-call optimization that prevents the stack from growing.
   //
   template <typename G> TailCall RunSecondTC(G &&g) {
-    char current = state_.load(std::memory_order_acq_rel);
+    char current = state_.load(std::memory_order_acquire);
     if (current == kRunSecondCallsSecond) {
       return g;
     }
