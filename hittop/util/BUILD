@@ -91,6 +91,7 @@ cc_library(
     hdrs = [
         "first_match.h",
         "is_callable.h",
+        "swap_and_invoke.h",
     ],
     copts = [
         "-std=c++14"

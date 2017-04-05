@@ -74,6 +74,7 @@ public:
     char current = state_.load(std::memory_order_acquire);
     for (;;) {
       if (current == kRunFirstCallsSecond) {
+        // TODO - pull this out into a reusable SwapAndReturn function in util.
         TailCall k;
         k.swap(second_);
         return k;
