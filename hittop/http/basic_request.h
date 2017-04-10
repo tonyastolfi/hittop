@@ -16,6 +16,9 @@
 #include "third_party/short_alloc/short_alloc.h"
 
 #include "hittop/http/basic_header.h"
+#include "hittop/http/http_method.h"
+#include "hittop/http/http_version.h"
+#include "hittop/http/mutable_message.h"
 #include "hittop/uri/basic_uri.h"
 #include "hittop/util/boost_iterator_range_helper.h"
 #include "hittop/util/in_place_alloc_factory.h"
@@ -42,22 +45,6 @@ using DefaultArenaMap =
 
 using DefaultInPlaceFactoryBuilder = util::AllocFactoryBuilder<
     std::tuple<::short_alloc::arena<DEFAULT_ARENA_SIZE>>>;
-
-struct HttpVersion {
-  int major = 1;
-  int minor = 1;
-};
-
-enum struct HttpMethod {
-  UNKNOWN,
-  CONNECT,
-  DELETE,
-  GET,
-  HEAD,
-  POST,
-  PUT,
-  TRACE
-};
 
 template <typename Range>
 using GenericMethod = boost::variant<HttpMethod, Range>;
@@ -86,7 +73,9 @@ template <typename Range, //
           typename SubRange = DefaultSubRange<Range>,
           template <typename> class Sequence = DefaultArenaVector,
           typename InPlaceFactoryBuilder = DefaultInPlaceFactoryBuilder>
-class BasicRequest {
+class BasicRequest
+    : public MutableMessage<
+          BasicRequest<Range, SubRange, Sequence, InPlaceFactoryBuilder>> {
 public:
   using FieldName = SubRange;
   using FieldValue = SubRange;

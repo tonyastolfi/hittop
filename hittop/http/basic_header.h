@@ -9,6 +9,8 @@ namespace hittop {
 namespace http {
 
 template <typename Range> struct BasicHeader {
+  using range_type = Range;
+
   Range name;
   Range value;
 

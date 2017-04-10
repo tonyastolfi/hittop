@@ -2,6 +2,7 @@ cc_library(
     name = "util",
     hdrs = [
         "boost_iterator_range_helper.h",
+        "construct_from_tuple.h",
         "fallible.h",
         "hash.h",
         "load_file_as_string.h",
@@ -23,6 +24,7 @@ cc_library(
 cc_test(
     name = "util-test",
     srcs = [
+        "construct_from_tuple-test.cc",
         "fallible-test.cc",
         "tail_call-test.cc",
     ],
