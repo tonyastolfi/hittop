@@ -3,6 +3,8 @@ cc_library(
     hdrs = [
         "basic_uri.h",
         "grammar.h",
+        "mutable_path_segments.h",
+        "mutable_uri.h",
         "uri_parse_visitor.h"
     ],
     copts = ["-std=c++14"],

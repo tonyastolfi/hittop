@@ -14,7 +14,7 @@ public:
   RequestHandler() {
     using std::declval;
 
-    static_assert(std::is_same<void, declval<Derived>().AsyncValidate([](
+    static_assert(std::is_same<void, declval<Derived>().async_validate([](
                                          const io::error_code &,
                                          auto &&continue_request) {})>::value,
                   "");
