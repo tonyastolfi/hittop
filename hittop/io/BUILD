@@ -4,6 +4,9 @@ cc_library(
         "async_circular_buffer_stream.h",
         "async_const_buffer_stream.h",
         "async_mutable_buffer_stream.h",
+        "async_transfer_task.h",
+        "async_reader.h",
+        "async_writer.h",
         "basic_buffer_sequence.h",
         "circular_buffer.h",
         "const_buffer_sequence.h",
@@ -24,6 +27,7 @@ cc_test(
     name = "io-test",
     srcs = [
         "async_circular_buffer_stream-test.cc",
+        "async_reader-test.cc",
     ],
     copts = [
         "-Iexternal/gtest/include",
