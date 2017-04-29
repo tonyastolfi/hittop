@@ -6,15 +6,22 @@
 namespace hittop {
 namespace io {
 
-template <typename SourceConstBufferStream, typename TargetAsyncWriteStream>
-class AsyncReader : public AsyncTransferTask<SourceConstBufferStream,
-                                             TargetAsyncWriteStream> {
-  friend class AsyncTransferTask<SourceConstBufferStream,
-                                 TargetAsyncWriteStream>;
+template <typename Source, typename Sink> class AsyncWriter;
+
+template <typename Source, typename Sink>
+using AsyncWriterBase =
+    AsyncTransferTask<Source, Sink, AsyncWriter<Source, Sink>>;
+
+template <typename AsyncConstBufferStreamSource, typename AsyncWriteStreamSink>
+class AsyncWriter : public AsyncWriterBase<AsyncConstBufferStreamSource,
+                                           AsyncWriteStreamSink> {
+  using Source = AsyncConstBufferStreamSource;
+  using Sink = AsyncWriteStreamSink;
+
+  friend AsyncWriterBase<Source, Sink>;
 
 public:
-  using AsyncTransferTask<SourceConstBufferStream,
-                          TargetAsyncWriteStream>::AsyncTransferTask;
+  using AsyncWriterBase<Source, Sink>::AsyncWriterBase;
 
 private:
   template <typename Handler> void pre_transfer(Handler &&handler) {

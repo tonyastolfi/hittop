@@ -6,16 +6,22 @@
 namespace hittop {
 namespace io {
 
-template <typename SourceAsyncReadStream,
-          typename TargetAsyncMutableBufferStream>
-class AsyncReader : public AsyncTransferTask<TargetAsyncMutableBufferStream,
-                                             SourceAsyncReadStream> {
-  friend class AsyncTransferTask<TargetAsyncMutableBufferStream,
-                                 SourceAsyncReadStream>;
+template <typename Source, typename Sink> class AsyncReader;
+
+template <typename Source, typename Sink>
+using AsyncReaderBase =
+    AsyncTransferTask<Sink, Source, AsyncReader<Source, Sink>>;
+
+template <typename AsyncReadStreamSource, typename AsyncMutableBufferStreamSink>
+class AsyncReader : public AsyncReaderBase<AsyncReadStreamSource,
+                                           AsyncMutableBufferStreamSink> {
+  using Source = AsyncReadStreamSource;
+  using Sink = AsyncMutableBufferStreamSink;
+
+  friend AsyncReaderBase<Source, Sink>;
 
 public:
-  using AsyncTransferTask<TargetAsyncMutableBufferStream,
-                          SourceAsyncReadStream>::AsyncTransferTask;
+  using AsyncReaderBase<Source, Sink>::AsyncReaderBase;
 
 private:
   template <typename Handler> void pre_transfer(Handler &&handler) {

@@ -25,6 +25,11 @@ namespace concurrent {
 // how soon.  Derived classes, if they offer stronger guarantees about this,
 // should document their behavior accordingly.
 //
+// Clients of Startable-derived classes should assume the StopAction passed to
+// their Starthandler have the same lifetime as the Startable itself. (i.e. any
+// calls to a StopAction must happen before the Startable that produced it is
+// destroyed.
+//
 class Startable : public AsyncTask<Startable> {
 public:
   using StopAction = std::function<void()>;
@@ -32,6 +37,7 @@ public:
       std::function<void(const error_code &, const StopAction &)>;
 
   void AsyncRun(CompletionHandler completion_handler) final {
+    assert(completion_handler != nullptr);
     completion_handler_ = std::move(completion_handler);
     started_.store(true, std::memory_order_release);
 
@@ -57,7 +63,8 @@ protected:
   virtual void Start(const CompletionHandler &started) = 0;
 
   // Derived classes may override this method to provide a way to stop or cancel
-  // a running task.
+  // a running task.  Overrides MUST handle the case where Stop is invoked
+  // after the derived class calls Finished.
   virtual void Stop() {}
 
   // Derived class must call Finished as its final act; one should assume that
@@ -71,6 +78,16 @@ protected:
   void Finished(const error_code &ec) final {
     CheckStarted();
     SwapAndInvoke(completion_handler_, ec);
+  }
+
+  // Returns whether Finished has been called.  This function is not safe to
+  // call concurrently with Finished.  It's up to the derived class to implement
+  // whatever synchronization strategy is appropriate for Stop, Finished,
+  // IsFinished, and any implementation state.
+  //
+  bool IsFinished() const final {
+    CheckStarted();
+    return completion_handler_ == nullptr;
   }
 
 private:

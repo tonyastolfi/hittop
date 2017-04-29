@@ -13,17 +13,10 @@ public:
   StaticStorage(const StaticStorage &) = delete;
   StaticStorage &operator=(const StaticStorage &) = delete;
 
-  ~StaticStorage() {
-    if (delete_) {
-      delete_();
-    }
-  }
+  ~StaticStorage() { destroy(); }
 
-  template <typename T, typename... Args> T &construct(Args &&args...) {
-    if (delete_) {
-      delete_();
-      delete_ = nullptr;
-    }
+  template <typename T, typename... Args> T &init(Args &&args...) {
+    destroy();
     if (Size < sizeof(T)) {
       T *const value = new T(std::forward<Args>(args)...);
       delete_ = [value]() { delete value; };
@@ -32,6 +25,13 @@ public:
       T &value = *(new (&storage_) T(std::forward<Args>(args)...));
       delete_ = [ptr = &value]() { ptr->~T(); };
       return value;
+    }
+  }
+
+  void destroy() {
+    if (delete_) {
+      delete_();
+      delete_ = nullptr;
     }
   }
 

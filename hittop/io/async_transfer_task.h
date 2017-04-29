@@ -4,6 +4,8 @@
 #include "hittop/concurrent/async_task.h"
 #include "hittop/util/construct_from_tuple.h"
 
+#include "hittop/io/types.h"
+
 namespace hittop {
 namespace io {
 
