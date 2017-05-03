@@ -3,6 +3,8 @@
 
 #include <type_traits>
 
+#include "hittop/uri/mutable_uri.h"
+
 #include "hittop/http/http_method.h"
 #include "hittop/http/mutable_message.h"
 
