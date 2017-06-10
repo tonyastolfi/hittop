@@ -18,7 +18,7 @@
 #include "hittop/http/basic_header.h"
 #include "hittop/http/http_method.h"
 #include "hittop/http/http_version.h"
-#include "hittop/http/mutable_message.h"
+#include "hittop/http/mutable_request.h"
 #include "hittop/uri/basic_uri.h"
 #include "hittop/util/boost_iterator_range_helper.h"
 #include "hittop/util/in_place_alloc_factory.h"
@@ -74,7 +74,7 @@ template <typename Range, //
           template <typename> class Sequence = DefaultArenaVector,
           typename InPlaceFactoryBuilder = DefaultInPlaceFactoryBuilder>
 class BasicRequest
-    : public MutableMessage<
+    : public MutableRequest<
           BasicRequest<Range, SubRange, Sequence, InPlaceFactoryBuilder>> {
 public:
   using FieldName = SubRange;
