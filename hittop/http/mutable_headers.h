@@ -21,12 +21,13 @@ public:
     static_assert(std::is_same<void, decltype(declval<Derived>().emplace_back(
                                          declval<range_type>(),
                                          declval<range_type>()))>::value,
-                  "");
+                  "void MutableHeaders::emplace_back(range_type, range_type) "
+                  "not defined");
 
     static_assert(
         std::is_same<void, decltype(declval<Derived>().push_back(
                                declval<BasicHeader<range_type>>()))>::value,
-        "");
+        "void MutableHeaders::push_back(BasicHeader<range_type>) not defined");
   }
 };
 

@@ -7,7 +7,7 @@ namespace http {
 template <typename BufferStream, typename RequestHandlerFactory,
           typename ResponseConsumerFactory>
 class AsyncRequestDispatcherTask
-    : public concurrent::AsyncTask<AsyncRequestParser> {
+    : public concurrent::AsyncTask<AsyncRequestDispatcherTask> {
 public:
   static const std::size_t kMaxRequestSize = 1 << 14;
 
@@ -15,16 +15,19 @@ public:
                              RequestHandlerFactory &request_handler_factory,
                              ResponseConsumerFactory &response_consumer_factory)
       : stream_(input_buffer), make_request_handler_(request_handler_factory),
-        make_response_consumer_(response_consumer_factory) {}
+        make_response_handler_(response_consumer_factory) {}
 
   void AsyncRun(CompletionHandler completion_handler_arg) {
     completion_handler_ = std::move(completion_handler_arg);
-    ReadNextRequest();
+    ReadNextRequest(1);
   }
 
 private:
   using RequestHandlerType = decltype(make_request_handler_());
 
+  // Pull at least 'min_count' bytes from the buffer stream and try to parse the
+  // result as an HTTP request.
+  //
   void ReadNextRequest(std::size_t min_count) {
     stream_.async_fetch(min_count, [this](const io::error_code &ec,
                                           const auto &buffers) {
@@ -88,9 +91,9 @@ private:
     const std::size_t parsed_size = std::distance(data, result.get());
 
     // Parse complete!
-    request_handler_.AsyncValidate(
+    request_handler_.async_validate(
         [this, parsed_size](const io::error_code &ec, auto &&continue_request) {
-          stream_.consume(size);
+          stream_.consume(parsed_size);
 
           // TODO - if Expect: 100-continue then send the continue response
           // here.
@@ -120,7 +123,8 @@ private:
 
   BufferStream &stream_;
   RequestHandlerFactory &make_request_handler_;
-  ResponseConsumerFactory &make_response_consumer_;
+  // void ConsumeResponse(void ProduceResponse(ResponseHandler*))
+  ResponseConsumerFactory &make_response_handler_;
   CompletionHandler completion_handler_;
   RequestHandlerType request_handler_;
 };

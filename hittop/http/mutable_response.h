@@ -17,14 +17,15 @@ public:
     static_assert(
         std::is_same<void, decltype(declval<Derived>().set_status_code(
                                declval<int>()))>::value,
-        "");
+        "void MutableResponse::set_status_code(int) not defined");
 
     using range_type = typename Derived::range_type;
 
     static_assert(
         std::is_same<void, decltype(declval<Derived>().set_reason_phrase(
                                declval<range_type>()))>::value,
-        "");
+        "void MutableResponse::set_reason_phrase(MutableResponse::range_type) "
+        "not defined");
   }
 };
 

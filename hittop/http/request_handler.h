@@ -14,6 +14,10 @@ public:
   RequestHandler() {
     using std::declval;
 
+    // void continue_request(AsyncConstBufferStream*,
+    //                       ResponseHandler,
+    //                       void Complete(error_code))
+    //
     static_assert(std::is_same<void, declval<Derived>().async_validate([](
                                          const io::error_code &,
                                          auto &&continue_request) {})>::value,

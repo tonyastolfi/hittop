@@ -21,7 +21,25 @@ public:
         std::is_same<void,
                      decltype(declval<Derived>().set_connection_disposition(
                          declval<ConnectionDisposition>()))>::value,
-        "");
+        "void "
+        "ResponseHandler::set_connection_disposition(ConnectionDisposition) "
+        "not defined.");
+
+    static_assert(
+        std::is_same<void, decltype(declval<Derived>().set_content_length(
+                               declval<std::size_t>()))>::value,
+        "void ResponseHandler::set_content_length(std::size_t) not defined.");
+
+    // void continue_response(AsyncConstBufferStream*,
+    //                        void Complete(error_code))
+    //
+    static_assert(std::is_same<void, declval<Derived>().async_validate([](
+                                         const io::error_code &,
+                                         auto &&continue_response) {})>::value,
+                  " void ResponseHandler::async_validate(void "
+                  "Handler(error_code, void "
+                  "ContinueResponse(AsyncConstBufferStream*, void "
+                  "Complete(error_code))))) not defined");
   }
 };
 

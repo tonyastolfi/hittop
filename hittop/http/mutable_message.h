@@ -45,7 +45,7 @@ public:
         "MutableMessage models must expose a public member function with the "
         "signature: void set_http_version(const HTTPVersion&)");
 
-    // TODO - We might be better off just requiring an add_header method.
+    // TODO - We might be better off just requiring a set_header method.
     using mutable_headers_type = decltype(declval<Derived>().mutable_headers());
     MutableHeaders<std::remove_pointer_t<mutable_headers_type>> headers;
   }

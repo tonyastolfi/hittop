@@ -20,7 +20,7 @@ public:
     static_assert(
         std::is_same<declval<Derived>().set_method(declval<HttpMethod>()),
                      void>::value,
-        "");
+        "void MutableRequest::set_method(HttpMethod) not defined.");
 
     using mutable_uri_type =
         std::decay_t<decltype(*declval<Derived>().mutable_uri())>;

@@ -1,6 +1,9 @@
 // Utilities for producing in-place factories that inject an allocator into
 // the construction args.
 //
+// TODO - make this a more generic facility; prepend arbitrary arguments to
+//  boost::in_place?  to any polymorphic function?
+//
 #ifndef HITTOP_UTIL_IN_PLACE_ALLOC_FACTORY_H
 #define HITTOP_UTIL_IN_PLACE_ALLOC_FACTORY_H
 

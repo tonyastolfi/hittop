@@ -1,0 +1,19 @@
+Server:
+
+- observes request builders
+- generates request data
+- generates responses
+- observes response data
+
+Client:
+
+- generates request builders
+- observes request data
+- observes response builders
+- generates response data
+
+
+Generally, client-server protocols model a state machine.
+
+Design should express state machines in terms of async control flow
+and generator/observer interfaces whose lifetimes are tied to a state.
