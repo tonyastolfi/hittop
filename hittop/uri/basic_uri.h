@@ -92,6 +92,11 @@ public:
 
   void assign_port(unsigned p) { port_ = p; }
 
+  template <typename... Args> void assign_authority(Args &&... args) {
+    authority_ =
+        builder_.template in_place<SubRange>(std::forward<Args>(args)...);
+  }
+
   const boost::optional<SubRange> &path() const { return path_; }
 
   template <typename... Args> void assign_path(Args &&... args) {
@@ -140,6 +145,7 @@ private:
   boost::optional<SubRange> user_;
   boost::optional<SubRange> host_;
   boost::optional<unsigned> port_;
+  boost::optional<SubRange> authority_;
   boost::optional<SubRange> path_;
   boost::optional<SubRange> query_;
   boost::optional<SubRange> fragment_;

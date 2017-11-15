@@ -38,7 +38,7 @@ cc_library(
         "//hittop/util:util",
         "//hittop/util:functional",
         "//third_party/short_alloc",
-        "@boost_1_62_0//:headers",
+        "@boost//:headers",
     ],
     visibility = ["//visibility:public"]
 )

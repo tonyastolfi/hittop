@@ -17,7 +17,7 @@ struct HttpVersion : boost::less_than_comparable<HttpVersion>,
   }
 
   bool operator==(const HttpVersion &that) const {
-    return major = that.major && minor == that.minor;
+    return major == that.major && minor == that.minor;
   }
 };
 

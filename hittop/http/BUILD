@@ -8,18 +8,20 @@ cc_library(
         "http_version.h",
         "mutable_headers.h",
         "mutable_message.h",
+        "mutable_request.h",
         "parse_request.h",
         "request.h",
         "request_parse_visitor.h",
     ],
     copts = ["-std=c++14"],
     deps = [
+        "//hittop/concept:concept",
         "//hittop/util:util",
         "//hittop/util:functional",
         "//hittop/uri",
         "//hittop/parser",
         "//third_party/short_alloc",
-        "@boost_1_62_0//:headers",
+        "@boost//:headers",
     ],
     visibility = ["//visibility:public"]
 )
@@ -76,12 +78,10 @@ cc_binary(
         "-std=c++14",
     ],
     linkopts = [
-        "-lprofiler",
-        "-ltcmalloc",
         "-Wl,-no_pie",
     ],
     deps = [
         ":http",
-        "@boost_1_62_0//:headers",
+        "@boost//:headers",
     ],
 )

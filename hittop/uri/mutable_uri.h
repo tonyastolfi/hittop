@@ -3,52 +3,28 @@
 
 #include <type_traits>
 
-#include "hittop/uri/mutable_path_segments_type.h"
+//#include "hittop/uri/mutable_path_segments_type.h"
 
 namespace hittop {
 namespace uri {
 
-template <typename T> struct MutableUri {
+template <typename Derived> struct MutableUri {
   MutableUri() {
-    using std::declval;
-    using range_type = typename T::range_type;
+    using part_type = typename Derived::part_type;
 
-    static_assert(std::is_same<void, decltype(declval<T>().set_scheme(
-                                         declval<range_type>()))>::value,
-                  "");
+    CONCEPT_MEMFUN(void, assign_scheme(CONCEPT_PARAM(part_type)));
+    CONCEPT_MEMFUN(void, assign_user(CONCEPT_PARAM(part_type)));
+    CONCEPT_MEMFUN(void, assign_host(CONCEPT_PARAM(part_type)));
+    CONCEPT_MEMFUN(void, assign_port(CONCEPT_PARAM(unsigned)));
+    CONCEPT_MEMFUN(void, assign_authority(CONCEPT_PARAM(part_type)));
+    CONCEPT_MEMFUN(void, assign_path(CONCEPT_PARAM(part_type)));
+    CONCEPT_MEMFUN(void, assign_query(CONCEPT_PARAM(part_type)));
+    CONCEPT_MEMFUN(void, assign_fragment(CONCEPT_PARAM(part_type)));
 
-    static_assert(std::is_same<void, decltype(declval<T>().set_user(
-                                         declval<range_type>()))>::value,
-                  "");
+    // using mutable_path_segments_type =
+    //    std::decay_t<decltype(*declval<T>().mutable_path_segments())>;
 
-    static_assert(std::is_same<void, decltype(declval<T>().set_host(
-                                         declval<range_type>()))>::value,
-                  "");
-
-    static_assert(std::is_same<void, decltype(declval<T>().set_port(
-                                         declval<unsigned>()))>::value,
-                  "");
-
-    static_assert(std::is_same<void, decltype(declval<T>().set_authority(
-                                         declval<range_type>()))>::value,
-                  "");
-
-    static_assert(std::is_same<void, decltype(declval<T>().set_path(
-                                         declval<range_type>()))>::value,
-                  "");
-
-    static_assert(std::is_same<void, decltype(declval<T>().set_query(
-                                         declval<range_type>()))>::value,
-                  "");
-
-    static_assert(std::is_same<void, decltype(declval<T>().set_fragment(
-                                         declval<range_type>()))>::value,
-                  "");
-
-    using mutable_path_segments_type =
-        std::decay_t<decltype(*declval<T>().mutable_path_segments())>;
-
-    MutablePathSegments<mutable_path_segments_type> path_segments_check;
+    // MutablePathSegments<mutable_path_segments_type> path_segments_check;
   }
 };
 

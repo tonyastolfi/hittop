@@ -1,37 +1,32 @@
 cc_library(
-    name = "json",
+    name = "concept",
     hdrs = [
-        "grammar.h",
-        "parse_visitor.h",
-        "parser.h",
-        "types.h",
+        "macros.h",
     ],
     srcs = [
     ],
     copts = ["-std=c++14"],
     deps = [
         "@boost//:headers",
-        "//hittop/parser",
+        "@boost//:system",
+        "//hittop/util",
+        "//hittop/util:tuples",
     ],
     visibility = ["//visibility:public"]
 )
 
 cc_test(
-    name = "json-test",
+    name = "concept-test",
     srcs = [
-        "parser-test.cc",
-        "types-test.cc",
-    ],
-    data = [
-        ":test-data.json"
+        "macros-test.cc",
     ],
     copts = [
         "-Iexternal/gtest/include",
         "-std=c++14",
     ],
     deps = [
+        ":concept",
         "@gtest//:main",
-        ":json",
-        "//hittop/util:test_util"
+        "@boost//:headers",
     ],
 )

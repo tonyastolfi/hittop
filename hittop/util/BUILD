@@ -16,7 +16,7 @@ cc_library(
     ],
     copts = ["-std=c++14"],
     deps = [
-        "@boost_1_62_0//:headers",
+        "@boost//:headers",
     ],
     visibility = ["//visibility:public"]
 )
@@ -54,7 +54,7 @@ cc_library(
     deps = [
         ":util",
         "@gtest//:main",
-        "@boost_1_62_0//:headers",
+        "@boost//:headers",
     ],
     visibility = ["//visibility:public"]
 )
@@ -68,7 +68,7 @@ cc_library(
         "-std=c++14"
     ],
     deps = [
-        "@boost_1_62_0//:headers",
+        "@boost//:headers",
     ],
     visibility = ["//visibility:public"]
 )
@@ -100,7 +100,7 @@ cc_library(
     ],
     deps = [
         ":tuples",
-        "@boost_1_62_0//:headers",
+        "@boost//:headers",
     ],
     visibility = ["//visibility:public"]
 )
@@ -129,7 +129,7 @@ cc_library(
         "-std=c++14"
     ],
     deps = [
-        "@boost_1_62_0//:headers",
+        "@boost//:headers",
     ],
     visibility = ["//visibility:public"]
 )
@@ -157,7 +157,7 @@ cc_library(
     ],
     copts = ["-std=c++14"],
     deps = [
-        "@boost_1_62_0//:headers",
+        "@boost//:headers",
         ":tuples",
     ],
     visibility = ["//visibility:public"]

@@ -14,7 +14,7 @@ cc_library(
         "//hittop/util:in_place_factory",
         "//hittop/parser",
         "//third_party/short_alloc",
-        "@boost_1_62_0//:headers",
+        "@boost//:headers",
     ],
     visibility = ["//visibility:public"]
 )

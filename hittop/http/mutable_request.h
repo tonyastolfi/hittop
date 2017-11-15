@@ -3,6 +3,7 @@
 
 #include <type_traits>
 
+#include "hittop/concept/macros.h"
 #include "hittop/uri/mutable_uri.h"
 
 #include "hittop/http/http_method.h"
@@ -17,15 +18,12 @@ public:
   MutableRequest() {
     using std::declval;
 
-    static_assert(
-        std::is_same<declval<Derived>().set_method(declval<HttpMethod>()),
-                     void>::value,
-        "void MutableRequest::set_method(HttpMethod) not defined.");
+    CONCEPT_MEMFUN(void, set_http_method(CONCEPT_PARAM(HttpMethod)));
 
     using mutable_uri_type =
         std::decay_t<decltype(*declval<Derived>().mutable_uri())>;
 
-    MutableUri<mutable_uri_type> uri_check;
+    uri::MutableUri<mutable_uri_type> uri_check;
   }
 };
 

@@ -15,8 +15,8 @@ cc_library(
     ],
     copts = ["-std=c++14"],
     deps = [
-        "@boost_1_62_0//:headers",
-        "@boost_1_62_0//:system",
+        "@boost//:headers",
+        "@boost//:system",
         "//hittop/util",
         "//hittop/util:tuples",
     ],
@@ -35,7 +35,7 @@ cc_test(
     deps = [
         ":concurrent",
         "@gtest//:main",
-        "@boost_1_62_0//:headers",
+        "@boost//:headers",
     ],
 )
 
@@ -51,7 +51,7 @@ cc_test(
     deps = [
         ":concurrent",
         "@gtest//:main",
-        "@boost_1_62_0//:headers",
+        "@boost//:headers",
     ],
 )
 
@@ -68,7 +68,7 @@ cc_test(
     deps = [
         ":concurrent",
         "@gtest//:main",
-        "@boost_1_62_0//:headers",
+        "@boost//:headers",
     ],
 )
 
@@ -84,14 +84,12 @@ cc_test(
         "-ftemplate-backtrace-limit=0",
     ],
     linkopts = [
-        "-lprofiler",
-        "-ltcmalloc",
         "-Wl,-no_pie",
     ],
     deps = [
         ":concurrent",
         "@gtest//:main",
-        "@boost_1_62_0//:headers",
+        "@boost//:headers",
     ],
 )
 
@@ -108,7 +106,7 @@ cc_test(
     deps = [
         ":concurrent",
         "@gtest//:main",
-        "@boost_1_62_0//:headers",
+        "@boost//:headers",
     ],
 )
 
@@ -126,6 +124,6 @@ cc_test(
     deps = [
         ":concurrent",
         "@gtest//:main",
-        "@boost_1_62_0//:headers",
+        "@boost//:headers",
     ],
 )
