@@ -90,6 +90,11 @@ protected:
   }
 
 public:
+  template <typename... Args>
+  static boost::intrusive_ptr<Derived> make_shared(Args &&... args) {
+    return {new Derived(std::forward<Args>(args)...)};
+  }
+
   CallbackTarget(const CallbackTarget &) = delete;
   CallbackTarget &operator=(const CallbackTarget &) = delete;
 

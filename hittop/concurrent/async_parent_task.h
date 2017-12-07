@@ -47,10 +47,12 @@ public:
     // We must be sure to run this on the strand so that there aren't any races
     // between Derived::OnRun and the completion handlers of any Spawned child
     // tasks.
-    strand_.dispatch([ this, captured_handler = std::move(handler_arg) ]() {
-      CompletionCheckGuard g(*this);
+    strand_.dispatch([
+      derived = derived_this(), captured_handler = std::move(handler_arg)
+    ]() {
+      CompletionCheckGuard g(*derived);
       handler_ = std::move(captured_handler);
-      derived_this().OnRun();
+      derived.OnRun();
     });
   }
 

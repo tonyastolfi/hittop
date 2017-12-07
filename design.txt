@@ -1,3 +1,49 @@
+=== 2017-11-16
+
+Stream of bytes is an AsyncConstStreamBuffer.
+
+On top of that are parsed protocol frames.
+
+1. Source -> User : here's a place to put your parser visitor and a callback for
+   when you're done.  But the visitor has to be side-effect free or idempotent
+   because you might get called on a partially present frame.
+
+2. User -> passed function : parse the protocol frame and call this visitor on its
+   parts.
+
+3. User -> passed completion handler : ok I am done looking at the buffer parts
+   handed to my visitor!  Go ahead and free them.  And here is the next function
+   to call for part 1 of the next round!  (Monads, baby)  TODO - how to alternate
+   in the case of HTTP between messages (structured, parsed) and raw byte buffers?
+   -- one solution is to give each visitor call a completion handler, which allows
+      handling of protocol parts to proceed concurrently, which is cool but probably
+      (maybe?) not needed in most cases.  However, come to think of it, it may
+      really simplify handler writing in the case where you do want to utilize
+      the most concurrency possible.  This makes it possible to have an overload
+      of the passed handler that takes an AsyncConstStreamBuffer.  This is cool
+      actually because you could have non-streaming content entity signatures
+      by just checking for callabilitiy with a certain signature.  Me like.
+
+      I suspect this may be overthinking and may look weird to a user, but how about:
+
+      HTTPRequestHandler {
+        operator()(run_parser, void completion_handler(error_code, next_part_handler)) {
+        }
+      }
+
+      HTTPMessageBodyHandler {
+        operator()(AsyncConstStreamBuffer* data, void completion_handler(error_code, next_part_handler)) {
+        }
+      }
+
+-- How do you compose this pattern?  So how to introduce a copy of it step 2?
+   Perhaps these nested protocols can be parsed concurrently?  Add a countdown
+   latch for calling the outer completion handler?  Like, call the outer one
+   only once all of the sub-tasks of nested protocol handling have completed?
+
+
+=== PAST
+
 Server:
 
 - observes request builders

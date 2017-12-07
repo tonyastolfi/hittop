@@ -12,10 +12,14 @@ cc_library(
         "parse_request.h",
         "request.h",
         "request_parse_visitor.h",
+        "server.h",
+        "server_connection.h",
     ],
-    copts = ["-std=c++14"],
+    copts = ["-std=c++1z"],
     deps = [
+        ":server_config_cc_proto",
         "//hittop/concept:concept",
+        "//hittop/concurrent:concurrent",
         "//hittop/util:util",
         "//hittop/util:functional",
         "//hittop/uri",
@@ -33,7 +37,7 @@ cc_test(
     ],
     copts = [
         "-Iexternal/gtest/include",
-        "-std=c++14",
+        "-std=c++1z",
     ],
     deps = [
         "@gtest//:main",
@@ -57,7 +61,7 @@ cc_test(
     ],
     copts = [
         "-Iexternal/gtest/include",
-        "-std=c++14",
+        "-std=c++1z",
     ],
     deps = [
         "@gtest//:main",
@@ -75,7 +79,7 @@ cc_binary(
         "parse_request_bench.cc"
     ],
     copts = [
-        "-std=c++14",
+        "-std=c++1z",
     ],
     linkopts = [
         "-Wl,-no_pie",
@@ -84,4 +88,29 @@ cc_binary(
         ":http",
         "@boost//:headers",
     ],
+)
+
+cc_binary(
+    name = "static_server",
+    srcs = [
+        "static_server_main.cc",
+    ],
+    copts = [
+        "-std=c++1z",
+    ],
+    deps = [
+        ":http",
+        "@boost//:headers",
+    ]
+)
+
+proto_library(
+    name = "server_config_proto",
+    srcs = ["server_config.proto"],
+    deps = [],
+)
+
+cc_proto_library(
+    name = "server_config_cc_proto",
+    deps = [":server_config_proto"],
 )

@@ -24,6 +24,8 @@ public:
                             handler_factory_args)),
         socket_(std::forward<SocketArgs>(socket_args)) {}
 
+  Socket &socket() { return *socket_; }
+
 private:
   void OnRun() {}
 

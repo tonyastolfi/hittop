@@ -10,6 +10,7 @@ cc_library(
         "null_mutex.h",
         "ordered_action_pair.h",
         "ordered_action_sequence.h",
+        "startable.h",
     ],
     srcs = [
     ],
@@ -115,6 +116,23 @@ cc_test(
     srcs = [
         "async_task-test.cc",
         "async_parent_task-test.cc",
+    ],
+    copts = [
+        "-Iexternal/gtest/include",
+        "-std=c++14",
+        "-ftemplate-backtrace-limit=0",
+    ],
+    deps = [
+        ":concurrent",
+        "@gtest//:main",
+        "@boost//:headers",
+    ],
+)
+
+cc_test(
+    name = "startable-test",
+    srcs = [
+        "startable-test.cc",
     ],
     copts = [
         "-Iexternal/gtest/include",

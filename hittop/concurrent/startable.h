@@ -8,6 +8,7 @@
 
 #include "hittop/util/swap_and_invoke.h"
 
+#include "hittop/concurrent/async_task.h"
 #include "hittop/concurrent/error_code.h"
 
 namespace hittop {
@@ -36,7 +37,9 @@ public:
   using StartHandler =
       std::function<void(const error_code &, const StopAction &)>;
 
-  void AsyncRun(CompletionHandler completion_handler) final {
+  virtual ~Startable() {}
+
+  void AsyncRun(CompletionHandler completion_handler) {
     assert(completion_handler != nullptr);
     completion_handler_ = std::move(completion_handler);
     started_.store(true, std::memory_order_release);
@@ -44,9 +47,9 @@ public:
     Start([this](const error_code &ec) {
       CheckStarted();
       if (ec) {
-        SwapAndInvoke(completion_handler_, ec);
+        util::SwapAndInvoke(completion_handler_, ec);
       } else {
-        SwapAndInvoke(start_handler_, ec, [this]() { Stop(); });
+        util::SwapAndInvoke(start_handler_, ec, [this]() { Stop(); });
       }
     });
   }
@@ -75,9 +78,9 @@ protected:
   // handler passed to Start is invoked with a non-success error code,
   // indicating failure to start; behavior is undefined if Finished is called in
   // this case.
-  void Finished(const error_code &ec) final {
+  void Finished(const error_code &ec) {
     CheckStarted();
-    SwapAndInvoke(completion_handler_, ec);
+    util::SwapAndInvoke(completion_handler_, ec);
   }
 
   // Returns whether Finished has been called.  This function is not safe to
@@ -85,7 +88,7 @@ protected:
   // whatever synchronization strategy is appropriate for Stop, Finished,
   // IsFinished, and any implementation state.
   //
-  bool IsFinished() const final {
+  bool IsFinished() const {
     CheckStarted();
     return completion_handler_ == nullptr;
   }
@@ -94,7 +97,7 @@ private:
   // Asserts that AsyncRun has been invoked before now; also synchronizes all
   // writes made on the thread that called AsyncRun so they are visible on the
   // current thread.
-  void CheckStarted() {
+  void CheckStarted() const {
     const bool is_started = started_.load(std::memory_order_acquire);
     assert(is_started);
   }
@@ -102,7 +105,7 @@ private:
   StartHandler start_handler_;
   CompletionHandler completion_handler_;
   std::atomic<bool> started_;
-}:
+};
 
 } // namespace concurrent
 } // namespace hittop

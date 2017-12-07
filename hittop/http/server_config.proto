@@ -1,0 +1,8 @@
+syntax = "proto3";
+
+package hittop.http;
+
+message HttpServerConfig {
+  uint32 port = 1;
+  string content_root = 2;
+}
