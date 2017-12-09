@@ -45,23 +45,17 @@ public:
              Args &&handler_factory_args, StartHandler start_handler)
       : super_type(io,
                    // Acceptor args:
-                   std::make_tuple(
+                   std::forward_as_tuple(
                        std::ref(io),
                        boost::asio::ip::tcp::endpoint{
                            boost::asio::ip::address_v4::any(),
                            boost::numeric_cast<unsigned short>(config.port())}),
                    // ConnectionFactory args:
-                   std::make_tuple(std::ref(io),
-                                   std::forward<Args>(handler_factory_args),
-                                   std::make_tuple(std::ref(io))),
+                   std::forward_as_tuple(
+                       std::ref(io), std::forward<Args>(handler_factory_args),
+                       std::forward_as_tuple(std::ref(io))),
                    std::move(start_handler)),
         config_(std::move(config)) {}
-
-  HttpServer(boost::asio::io_service &io, HttpServerConfig config,
-             const HandlerFactory &handler_factory, StartHandler start_handler)
-      : HttpServer(io, std::move(config),
-                   std::make_tuple(std::cref(handler_factory)),
-                   std::move(start_handler)) {}
 
 private:
   const HttpServerConfig config_;

@@ -57,15 +57,16 @@ struct HttpMethodVisitor : boost::static_visitor<HttpMethod> {
   }
 };
 
-template <typename Range>
-struct MethodNameVisitor : boost::static_visitor<Range> {
-  Range operator()(const Range &r) const { return r; }
+struct MethodNameVisitor : boost::static_visitor<std::string> {
+  template <typename Range> std::string operator()(const Range &r) const {
+    return {std::begin(r), std::end(r)};
+  }
 
-  Range operator()(const HttpMethod m) const {
+  std::string operator()(const HttpMethod m) const {
     static const std::string names[] = {
         "UNKNOWN", "CONNECT", "DELETE", "GET", "HEAD", "POST", "PUT", "TRACE"};
     const std::size_t index = static_cast<std::size_t>(m);
-    return Range(names[index].begin(), names[index].end());
+    return names[index];
   }
 };
 
@@ -114,8 +115,8 @@ public:
     return boost::apply_visitor(HttpMethodVisitor{}, method_);
   }
 
-  SubRange method_name() const {
-    return boost::apply_visitor(MethodNameVisitor<SubRange>{});
+  auto method_name() const {
+    return boost::apply_visitor(MethodNameVisitor{}, method_);
   }
 
   void set_major_version(int major) { version_.major = major; }

@@ -78,12 +78,8 @@ protected:
     // decrement (because the child task has terminated) and a
     // CompletionCheckGuard in case this is the last running child and
     // the handler doesn't Spawn any more tasks.
-    return strand_.wrap(
-        [ captured_handler = std::forward<Handler>(handler),
-          this ](const error_code &ec) {
-          CompletionCheckGuard g(derived_this());
-          captured_handler(ec);
-        });
+    return strand_.wrap(ChildHandlerWrapper<std::decay_t<Handler>>{
+        *this, std::forward<Handler>(handler)});
   }
 
   // Expose the strand so that the derived task can run operations (via child
@@ -93,6 +89,23 @@ protected:
   boost::asio::io_service::strand strand_;
 
 private:
+  template <typename Handler> struct ChildHandlerWrapper {
+    template <typename Arg>
+    ChildHandlerWrapper(AsyncParentTask &parent, Arg &&arg)
+        : parent_(parent), handler_(std::forward<Arg>(arg)) {}
+
+    using result_type = void;
+
+    template <typename... Args>
+    void operator()(const error_code &ec, Args &&... args) const {
+      CompletionCheckGuard g(parent_.derived_this());
+      handler_(ec, std::forward<Args>(args)...);
+    }
+
+    AsyncParentTask &parent_;
+    Handler handler_;
+  };
+
   std::atomic<std::size_t> child_count_;
   CompletionHandler handler_;
 };

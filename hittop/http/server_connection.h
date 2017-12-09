@@ -1,13 +1,20 @@
 #ifndef HITTOP_HTTP_SERVER_CONNECTION_H
 #define HITTOP_HTTP_SERVER_CONNECTION_H
 
+#include <functional>
 #include <tuple>
 #include <utility>
+
+#include "boost/asio/buffer.hpp"
+#include "boost/asio/buffers_iterator.hpp"
 
 #include "hittop/concurrent/async_parent_task.h"
 #include "hittop/io/async_circular_buffer_stream.h"
 #include "hittop/io/async_reader.h"
 #include "hittop/util/construct_from_tuple.h"
+
+#include "hittop/http/parse_request.h"
+#include "hittop/http/request.h"
 
 namespace hittop {
 namespace http {
@@ -26,19 +33,82 @@ public:
                        SocketArgs &&socket_args)
       : super_type(io), handler_factory_(std::forward<HandlerFactoryArgs>(
                             handler_factory_args)),
-        socket_(std::forward<SocketArgs>(socket_args)) {}
+        socket_(std::forward<SocketArgs>(socket_args)), input_buffer_(),
+        reader_(std::forward_as_tuple(std::ref(*socket_)),
+                std::forward_as_tuple(std::ref(input_buffer_))) {}
 
   Socket &socket() { return *socket_; }
 
 private:
-  void OnRun() {}
+  void OnRun() {
+    std::cout << "started a new connection" << std::endl;
+    this->Spawn(reader_, [](const io::error_code &ec) {
+      std::cout << "done reading" << std::endl;
+    });
+    ReadNextRequest();
+  }
+
+  void ReadNextRequest(const std::size_t minimum_bytes = 1) {
+    input_buffer_.async_fetch(minimum_bytes, this->WrapChildHandler([this](
+                                                 const io::error_code &ec,
+                                                 const auto &buffers) {
+      if (ec) {
+        std::cout << "error fetching from buffer" << std::endl;
+        return;
+      }
+      auto first = boost::asio::buffers_begin(buffers);
+      auto last = boost::asio::buffers_end(buffers);
+      std::cout << "read data:" << std::string(first, last) << std::flush;
+
+      ZeroCopyRequest<decltype(first)> request;
+      auto result =
+          ParseRequest(boost::make_iterator_range(first, last), &request);
+      if (result.ok()) {
+        std::cout << "Parsed OK!" << std::endl;
+        last_request_size_ = std::distance(first, result.get());
+        auto handler = (*handler_factory_)();
+        handler( //
+            request,
+            // continue_with(error, body_reader) or continue_with(error)
+            this->WrapChildHandler(
+                [this](const io::error_code &ec, std::string s) {
+                  std::cout << "handler said " << s << std::endl;
+                  input_buffer_.consume(last_request_size_);
+                  // TODO - give body to the handler.
+                  ReadNextRequest();
+                })
+            // TODO - respond_with(status, message, disposition, headers, body)
+            //  (using named parameters;
+            //   respond_with(
+            //     http::status = 200,
+            //     http::message = "OK",
+            //     http::headers = [](auto&& header) {
+            //       header("Content-Type": "application/json");
+            //       header("Connection": "close");
+            //     },
+            //     http::body = <pointer-like to AsyncConstBufferStream>
+            //     http::cleanup = []() {
+            //       delete buffer_stream; ...
+            //     }
+            //   )
+            );
+      } else if (result.error() == parser::ParseError::INCOMPLETE) {
+        const std::size_t new_minimum = boost::asio::buffer_size(buffers) + 1;
+        input_buffer_.consume(0);
+        ReadNextRequest(new_minimum);
+      } else {
+        std::cout << "Parse bad" << std::endl;
+        input_buffer_.consume(0);
+        socket_->close();
+      }
+    }));
+  }
 
   util::ConstructFromTuple<HandlerFactory> handler_factory_;
   util::ConstructFromTuple<Socket> socket_;
   io::AsyncCircularBufferStream input_buffer_;
-  io::AsyncReader<Socket &, io::AsyncCircularBufferStream &> reader_{
-      std::make_tuple(std::ref(*socket_)),
-      std::make_tuple(std::ref(input_buffer_))};
+  io::AsyncReader<Socket &, io::AsyncCircularBufferStream &> reader_;
+  std::size_t last_request_size_ = 0;
 };
 
 } // namespace http

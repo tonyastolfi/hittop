@@ -21,15 +21,21 @@ int main(int argc, const char *const *argv) {
     google::protobuf::io::FileInputStream fin(fd);
     fin.SetCloseOnDelete(true);
     google::protobuf::TextFormat::Parse(&fin, &config);
+    std::cout << config.DebugString() << std::endl;
   }
 
   boost::asio::io_service io;
 
   // TODO
-  auto handler_factory = []() { return nullptr; };
+  auto handler_factory = []() {
+    return [](auto &request, auto &&continue_with) {
+      std::cout << "method name is " << request.method_name() << std::endl;
+      continue_with(hittop::io::error_code{}, std::string{"foobar"});
+    };
+  };
 
   hittop::http::HttpServer<decltype(handler_factory)> server(
-      io, config, handler_factory,
+      io, config, std::forward_as_tuple(handler_factory),
       [](auto...) { std::cout << "server started" << std::endl; });
 
   server.AsyncRun([](auto...) { std::cout << "server stopped" << std::endl; });

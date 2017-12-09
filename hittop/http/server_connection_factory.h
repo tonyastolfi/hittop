@@ -20,9 +20,11 @@ public:
     auto *const connection_ptr =
         new HttpServerConnection<HandlerFactory, Socket>(io_, factory_args_,
                                                          socket_args_);
-    return std::make_tuple(
-        connection_ptr,
-        [connection_ptr](const io::error_code &ec) { delete connection_ptr; });
+    return std::make_tuple(connection_ptr,
+                           [connection_ptr](const io::error_code &ec) {
+                             std::cout << "connection finished" << std::endl;
+                             delete connection_ptr;
+                           });
   }
 
 private:

@@ -3,6 +3,7 @@
 
 #include "hittop/concurrent/async_task.h"
 #include "hittop/util/construct_from_tuple.h"
+#include "hittop/util/swap_and_invoke.h"
 
 #include "hittop/io/types.h"
 
@@ -26,7 +27,7 @@ public:
   }
 
 protected:
-  void Complete(const error_code &ec) { SwapAndInvoke(handler_, ec); }
+  void Complete(const error_code &ec) { util::SwapAndInvoke(handler_, ec); }
 
   util::ConstructFromTuple<Buffer> buffer_;
   util::ConstructFromTuple<Stream> stream_;
