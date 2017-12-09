@@ -6,6 +6,7 @@
 #include "boost/asio/strand.hpp"
 
 #include "hittop/concurrent/async_task.h"
+#include "hittop/util/swap_and_invoke.h"
 
 namespace hittop {
 namespace concurrent {
@@ -22,11 +23,12 @@ private:
     explicit CompletionCheckGuard(Derived &that) : that_(that) {}
 
     ~CompletionCheckGuard() {
-      if (that_.child_count_.fetch_sub(1, std::memory_order_release) == 0) {
+      // Decrement the child count atomically and if it is 1, then perform an
+      // acquire so that this thread sees _all_ effects ordered before any other
+      // decrements; this is to avoid using acq_rel ordering here.
+      if (that_.child_count_.fetch_sub(1, std::memory_order_release) == 1) {
         std::atomic_thread_fence(std::memory_order_acquire);
-        decltype(that_.handler_) local_handler;
-        local_handler.swap(that_.handler_);
-        local_handler({});
+        util::SwapAndInvoke(that_.handler_, error_code{});
       }
     }
 
@@ -47,12 +49,10 @@ public:
     // We must be sure to run this on the strand so that there aren't any races
     // between Derived::OnRun and the completion handlers of any Spawned child
     // tasks.
-    strand_.dispatch([
-      derived = derived_this(), captured_handler = std::move(handler_arg)
-    ]() {
-      CompletionCheckGuard g(*derived);
+    strand_.dispatch([ captured_handler = std::move(handler_arg), this ]() {
+      CompletionCheckGuard g(derived_this());
       handler_ = std::move(captured_handler);
-      derived.OnRun();
+      derived_this().OnRun();
     });
   }
 
@@ -64,26 +64,31 @@ protected:
 
   template <typename Task>
   void Spawn(Task &&child_task, CompletionHandler handler) {
+    // Run the child task, consuming the passed value using std::forward.
+    std::forward<Task>(child_task)
+        .AsyncRun(WrapChildHandler(std::move(handler)));
+  }
+
+  template <typename Handler> auto WrapChildHandler(Handler &&handler) {
     // Bump the refcount because we're launching a new child.
     child_count_.fetch_add(1, std::memory_order_relaxed);
 
-    // Run the child task, consuming the passed value using std::forward.
-    std::forward<Task>(child_task)
-        .AsyncRun(
-            // The handler passed to the child task will dispatch the passed
-            // handler to the parent task's strand, wrapping it with a reference
-            // decrement (because the child task has terminated) and a
-            // CompletionCheckGuard in case this is the last running child and
-            // the handler doesn't Spawn any more tasks.
-            strand_.wrap(
-                [ handler = std::move(handler), this ](const error_code &ec) {
-                  CompletionCheckGuard g(derived_this());
-                  handler(ec);
-                }));
+    // The handler passed to the child task will dispatch the passed
+    // handler to the parent task's strand, wrapping it with a reference
+    // decrement (because the child task has terminated) and a
+    // CompletionCheckGuard in case this is the last running child and
+    // the handler doesn't Spawn any more tasks.
+    return strand_.wrap(
+        [ captured_handler = std::forward<Handler>(handler),
+          this ](const error_code &ec) {
+          CompletionCheckGuard g(derived_this());
+          captured_handler(ec);
+        });
   }
 
   // Expose the strand so that the derived task can run operations (via child
-  // tasks) on the strand to access shared state and also so that it can get at
+  // tasks) on the strand to access shared state and also so that it can get
+  // at
   // the io_service associated with this task.
   boost::asio::io_service::strand strand_;
 

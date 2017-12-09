@@ -45,14 +45,14 @@ public:
   // You can treat this type like a pointer to 'T'
   T &operator*() { return value_; }
   const T &operator*() const { return value_; }
-  T *operator->() { return &value_; }
-  const T *operator->() const { return &value_; }
+  std::decay_t<T> *operator->() { return &value_; }
+  const std::decay_t<T> *operator->() const { return &value_; }
 
   // Or if you'd rather have named methods...
   T &get() { return value_; }
   const T &get() const { return value_; }
-  T *get_ptr() { return &value_; }
-  const T *get_ptr() const { return &value_; }
+  std::decay_t<T> *get_ptr() { return &value_; }
+  const std::decay_t<T> *get_ptr() const { return &value_; }
 
 private:
   T value_;

@@ -10,6 +10,7 @@ cc_library(
         "null_mutex.h",
         "ordered_action_pair.h",
         "ordered_action_sequence.h",
+        "parent_startable.h",
         "startable.h",
     ],
     srcs = [

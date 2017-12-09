@@ -21,7 +21,10 @@ class AsyncReader : public AsyncReaderBase<AsyncReadStreamSource,
   friend AsyncReaderBase<Source, Sink>;
 
 public:
-  using AsyncReaderBase<Source, Sink>::AsyncReaderBase;
+  template <typename SourceArgs, typename SinkArgs>
+  AsyncReader(SourceArgs &&source_args, SinkArgs &&sink_args)
+      : AsyncReaderBase<Source, Sink>(std::forward<SinkArgs>(sink_args),
+                                      std::forward<SourceArgs>(source_args)) {}
 
 private:
   template <typename Handler> void pre_transfer(Handler &&handler) {

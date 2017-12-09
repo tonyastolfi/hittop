@@ -24,10 +24,15 @@ int main(int argc, const char *const *argv) {
   }
 
   boost::asio::io_service io;
-  auto server = hittop::http::HttpServer::make_shared(
-      io, config, [](auto...) { std::cout << "server started" << std::endl; });
 
-  server->AsyncRun([](auto...) { std::cout << "server stopped" << std::endl; });
+  // TODO
+  auto handler_factory = []() { return nullptr; };
+
+  hittop::http::HttpServer<decltype(handler_factory)> server(
+      io, config, handler_factory,
+      [](auto...) { std::cout << "server started" << std::endl; });
+
+  server.AsyncRun([](auto...) { std::cout << "server stopped" << std::endl; });
 
   io.run();
 

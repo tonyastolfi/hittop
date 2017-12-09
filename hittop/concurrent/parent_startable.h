@@ -9,16 +9,20 @@ namespace concurrent {
 
 template <typename Derived, typename Base = AsyncTaskBase>
 class ParentStartable : public AsyncParentTask<Derived, Base> {
-  friend class AsyncParentTask<Drived>;
+  friend class AsyncParentTask<Derived, Base>;
 
 public:
   using super_type = AsyncParentTask<Derived, Base>;
+
+  using CompletionHandler = typename super_type::CompletionHandler;
+
+  using StartHandler = Startable::StartHandler;
 
   virtual ~ParentStartable() {}
 
 protected:
   ParentStartable(boost::asio::io_service &io, StartHandler start_handler)
-      : super_type(io), root_(std::move(start_handler)) {}
+      : super_type(io), root_(std::move(start_handler), *this) {}
 
   // This function must be implemented to specify the startup logic for this
   // type; the passed completion handler must be invoked when the object is
@@ -46,6 +50,8 @@ protected:
 
 private:
   class RootTask : public Startable {
+    friend class ParentStartable;
+
   public:
     template <typename F>
     RootTask(F &&start_handler, ParentStartable &parent)
@@ -61,7 +67,7 @@ private:
   };
 
   void OnRun() {
-    Spawn(root_, [](auto &&...) {
+    this->Spawn(root_, [](auto &&...) {
       // TODO - is there anything we need to do here??
     });
   }

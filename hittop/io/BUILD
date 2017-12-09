@@ -12,6 +12,7 @@ cc_library(
         "circular_buffer.h",
         "const_buffer_sequence.h",
         "const_buffers_handler.h",
+        "generic_server.h",
         "mutable_buffer_sequence.h",
         "mutable_buffers_handler.h",
         "types.h",
