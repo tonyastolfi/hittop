@@ -1,6 +1,7 @@
 #ifndef HITTOP_HTTP_SERVER_CONNECTION_H
 #define HITTOP_HTTP_SERVER_CONNECTION_H
 
+#include <experimental/string_view>
 #include <functional>
 #include <tuple>
 #include <utility>
@@ -9,15 +10,30 @@
 #include "boost/asio/buffers_iterator.hpp"
 
 #include "hittop/concurrent/async_parent_task.h"
+#include "hittop/concurrent/ordered_action_pair.h"
 #include "hittop/io/async_circular_buffer_stream.h"
 #include "hittop/io/async_reader.h"
+#include "hittop/kwargs/kwargs.h"
 #include "hittop/util/construct_from_tuple.h"
+#include "hittop/util/shared_ptr_type.h"
 
+#include "hittop/http/connection_disposition.h"
 #include "hittop/http/parse_request.h"
 #include "hittop/http/request.h"
 
 namespace hittop {
 namespace http {
+
+using string_view = std::experimental::string_view;
+
+DEFINE_KEYWORD(status, unsigned);
+DEFINE_KEYWORD(message, string_view);
+DEFINE_KEYWORD(
+    headers,
+    std::function<void(std::function<void(string_view, string_view)>)>);
+DEFINE_KEYWORD(connection, ConnectionDisposition);
+DEFINE_KEYWORD(body, io::GenericConstBufferStreamBase *);
+DEFINE_KEYWORD(cleanup, std::function<void(const io::error_code &)>);
 
 template <typename HandlerFactory, typename Socket>
 class HttpServerConnection : public concurrent::AsyncParentTask<
@@ -71,7 +87,7 @@ private:
             request,
             // continue_with(error, body_reader) or continue_with(error)
             this->WrapChildHandler(
-                [this](const io::error_code &ec, std::string s) {
+                [this](const io::error_code &ec, auto &&body_reader) {
                   std::cout << "handler said " << s << std::endl;
                   input_buffer_.consume(last_request_size_);
                   // TODO - give body to the handler.
@@ -109,6 +125,8 @@ private:
   io::AsyncCircularBufferStream input_buffer_;
   io::AsyncReader<Socket &, io::AsyncCircularBufferStream &> reader_;
   std::size_t last_request_size_ = 0;
+  util::shared_ptr_t<concurrent::OrderedActionPair> next_response_boundary_{
+      new concurrent::OrderedActionPair{}};
 };
 
 } // namespace http

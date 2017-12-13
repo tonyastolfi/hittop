@@ -1,10 +1,12 @@
 #ifndef HITTOP_IO_LIMITED_ASYNC_CONST_BUFFER_STREAM_H
 #define HITTOP_IO_LIMITED_ASYNC_CONST_BUFFER_STREAM_H
 
-#include "hittop/io/async_const_buffer_stream.h"
-
 #include <cstddef>
 #include <vector>
+
+#include "boost/asio/error.hpp"
+
+#include "hittop/io/async_const_buffer_stream.h"
 
 namespace hittop {
 namespace io {
@@ -31,6 +33,9 @@ public:
 
   template <typename Handler>
   void async_fetch(const std::size_t min_bytes, Handler &&handler) {
+    if (min_bytes > bytes_remaining_) {
+      handler(boost::asio::error::eof, const_buffers_type{});
+    }
     stream_.async_fetch(min_bytes, [
       limit = bytes_remaining_, handler = std::forward<Handler>(handler)
     ](const error_code &ec, const auto &unlimited_buffers) {

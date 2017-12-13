@@ -1,3 +1,4 @@
+# -*- mode: python; -*-
 cc_library(
     name = "util",
     hdrs = [
@@ -8,6 +9,7 @@ cc_library(
         "load_file_as_string.h",
         "range_to_string.h",
         "scope_exit.h",
+        "shared_ptr_type.h",
         "tail_call.h",
         "type_traits.h",
     ],

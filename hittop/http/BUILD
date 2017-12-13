@@ -1,3 +1,4 @@
+# -*- mode: python; -*-
 cc_library(
     name = "http",
     hdrs = [
@@ -22,6 +23,7 @@ cc_library(
         "//hittop/concept:concept",
         "//hittop/concurrent:concurrent",
         "//hittop/io:io",
+        "//hittop/kwargs:kwargs",
         "//hittop/util:util",
         "//hittop/util:functional",
         "//hittop/uri",
