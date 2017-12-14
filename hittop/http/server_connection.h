@@ -32,7 +32,7 @@ DEFINE_KEYWORD(
     headers,
     std::function<void(std::function<void(string_view, string_view)>)>);
 DEFINE_KEYWORD(connection, ConnectionDisposition);
-DEFINE_KEYWORD(body, io::GenericConstBufferStreamBase *);
+DEFINE_KEYWORD(body, std::nullptr_t);
 DEFINE_KEYWORD(cleanup, std::function<void(const io::error_code &)>);
 
 template <typename HandlerFactory, typename Socket>
@@ -82,32 +82,34 @@ private:
       if (result.ok()) {
         std::cout << "Parsed OK!" << std::endl;
         last_request_size_ = std::distance(first, result.get());
+        auto prev_response_boundary = std::move(next_response_boundary_);
+        next_response_boundary_.reset(new concurrent::OrderedActionPair{});
         auto handler = (*handler_factory_)();
         handler( //
             request,
-            // continue_with(error, body_reader) or continue_with(error)
+            // continue_with(error, body_reader) TODO - or continue_with(error)
             this->WrapChildHandler(
                 [this](const io::error_code &ec, auto &&body_reader) {
-                  std::cout << "handler said " << s << std::endl;
                   input_buffer_.consume(last_request_size_);
                   // TODO - give body to the handler.
                   ReadNextRequest();
-                })
-            // TODO - respond_with(status, message, disposition, headers, body)
-            //  (using named parameters;
-            //   respond_with(
-            //     http::status = 200,
-            //     http::message = "OK",
-            //     http::headers = [](auto&& header) {
-            //       header("Content-Type": "application/json");
-            //       header("Connection": "close");
-            //     },
-            //     http::body = <pointer-like to AsyncConstBufferStream>
-            //     http::cleanup = []() {
-            //       delete buffer_stream; ...
-            //     }
-            //   )
-            );
+                }),
+            // respond_with(
+            //   http::status = 200,
+            //   http::message = "OK",
+            //   http::headers = [](auto&& header) {
+            //     header("Content-Type": "application/json");
+            //     header("Connection": "close");
+            //   },
+            //   http::body = <pointer-like to AsyncConstBufferStream>
+            //   http::cleanup = []() {
+            //     delete buffer_stream; ...
+            //   }
+            // )
+            [ prev_response_boundary,
+              sock = socket_.get_ptr() ](auto &&... kwargs){
+
+            });
       } else if (result.error() == parser::ParseError::INCOMPLETE) {
         const std::size_t new_minimum = boost::asio::buffer_size(buffers) + 1;
         input_buffer_.consume(0);
@@ -127,7 +129,23 @@ private:
   std::size_t last_request_size_ = 0;
   util::shared_ptr_t<concurrent::OrderedActionPair> next_response_boundary_{
       new concurrent::OrderedActionPair{}};
+  io::AsyncCircularBufferStream output_buffer_;
+
+  static const char *const kResponsePart1;
+  static const char *const kCrlf;
+  static const char *const kResponsePart2;
 };
+
+template <typename HandlerFactory, typename Socket>
+const char *const HttpServerConnection<HandlerFactory, Socket>::kResponsePart1 =
+    "HTTP/1.1 ";
+
+template <typename HandlerFactory, typename Socket>
+const char *const HttpServerConnection<HandlerFactory, Socket>::kCrlf = "\r\n";
+
+template <typename HandlerFactory, typename Socket>
+const char *const HttpServerConnection<HandlerFactory, Socket>::kResponsePart2 =
+    "Server: HiTToP/0.1\r\n\r\n";
 
 } // namespace http
 } // namespace hittop

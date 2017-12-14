@@ -4,6 +4,7 @@ cc_library(
     hdrs = [
         "basic_header.h",
         "basic_request.h",
+        "connection_disposition.h",
         "grammar.h",
         "http_method.h",
         "http_version.h",

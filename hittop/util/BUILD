@@ -180,3 +180,32 @@ cc_test(
         ":in_place_factory",
     ],
 )
+
+cc_library(
+    name="char_range",
+    hdrs = [
+        "char_range.h",
+    ],
+    srcs = [
+    ],
+    copts = ["-std=c++1z"],
+    deps = [
+        "@boost//:headers",
+    ],
+    visibility = ["//visibility:public"]
+)
+
+cc_test(
+    name = "char_range-test",
+    srcs = [
+        "char_range-test.cc",
+    ],
+    copts = [
+        "-Iexternal/gtest/include",
+        "-std=c++1z",
+    ],
+    deps = [
+        "@gtest//:main",
+        ":char_range",
+    ],
+)

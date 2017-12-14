@@ -28,9 +28,18 @@ int main(int argc, const char *const *argv) {
 
   // TODO
   auto handler_factory = []() {
-    return [](auto &request, auto &&continue_with) {
+    return [](auto &request, auto &&continue_with, auto &&respond_with) {
       std::cout << "method name is " << request.method_name() << std::endl;
       continue_with(hittop::io::error_code{}, std::string{"foobar"});
+
+      namespace http = hittop::http;
+
+      respond_with(http::status = 200, http::message = "Ok",
+                   http::headers =
+                       [](auto &&write_header) {
+                         write_header("Content-Type", "text/plain");
+                       },
+                   http::body = "Hello, World!");
     };
   };
 
