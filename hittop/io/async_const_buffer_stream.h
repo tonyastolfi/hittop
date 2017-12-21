@@ -15,8 +15,10 @@ namespace io {
 //
 //  void async_fetch(std::size_t minimum_size, ConstBuffersHandler);
 //
+// The maximum number of bytes that can be fetched in one call from this stream.
 //  std::size_t max_size() const;
 //
+// The number of bytes which can be fetched right now without waiting.
 //  std::size_t size() const;
 //
 //  void consume(std::size_t byte_count);

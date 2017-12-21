@@ -20,6 +20,7 @@ cc_library(
         "@boost//:headers",
         "@boost//:system",
         "//hittop/util",
+        "//hittop/util:functional",
         "//hittop/util:tuples",
     ],
     visibility = ["//visibility:public"]

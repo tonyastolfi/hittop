@@ -62,15 +62,15 @@ inline bool operator<(const CharRange<Begin, End> &range, OtherRange &&other) {
 
 template <typename Begin, typename End, typename OtherRange>
 inline bool operator<(OtherRange &&other, const CharRange<Begin, End> &range) {
-  return std::lexicographical_comparer(std::begin(other), std::end(other),
-                                       range.begin(), range.end());
+  return std::lexicographical_compare(std::begin(other), std::end(other),
+                                      range.begin(), range.end());
 }
 
 template <typename Begin1, typename End1, typename Begin2, typename End2>
 inline bool operator<(const CharRange<Begin1, End1> &range1,
                       const CharRange<Begin2, End2> &range2) {
-  return std::lexicographical_comparer(range1.begin(), range1.end(),
-                                       range2.begin(), range2.end());
+  return std::lexicographical_compare(range1.begin(), range1.end(),
+                                      range2.begin(), range2.end());
 }
 
 // TODO - hash

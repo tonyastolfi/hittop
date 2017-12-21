@@ -1,10 +1,11 @@
 #ifndef HITTOP_HTTP_SERVER_CONNECTION_H
 #define HITTOP_HTTP_SERVER_CONNECTION_H
 
+#include <cstring>
 #include <experimental/string_view>
 #include <functional>
+#include <string>
 #include <tuple>
-#include <utility>
 
 #include "boost/asio/buffer.hpp"
 #include "boost/asio/buffers_iterator.hpp"
@@ -130,6 +131,21 @@ private:
   util::shared_ptr_t<concurrent::OrderedActionPair> next_response_boundary_{
       new concurrent::OrderedActionPair{}};
   io::AsyncCircularBufferStream output_buffer_;
+
+  // TODO - move out of template and eliminate the function-static init overhead
+  static const char *CodeToString(unsigned code) {
+    static const char *const *const kStrings = ([]() {
+      static char kBuffer[500][4];
+      for (unsigned c = 100; c < 600; ++c) {
+        std::sprintf(kBuffer[c - 100], "%u", c);
+      }
+      return kBuffer;
+    })();
+    if (code < 100 || code >= 600) {
+      return "INVALID";
+    }
+    return kStrings[code - 100];
+  }
 
   static const char *const kResponsePart1;
   static const char *const kCrlf;
