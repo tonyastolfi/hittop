@@ -14,6 +14,19 @@
 namespace hittop {
 namespace io {
 
+// Ideas for how to make concurrent operation more efficient:
+//
+// 1. Make sure rd/wr heads in CircularBuffer are updated atomically (DONE)
+// 2. Separate into reader/writer state in terms of mutability; There are points
+// where control is transferred from one to the other, and at those points we
+// need an atomic release/acquire pair.  We can make sure actions happen by
+// using a technique similar to OrderedActionPair; try to pass off the work on
+// the other guy, and then loop until you've succeeded or they have.
+// 3. To implement #2, have a single atomically updated state word that is
+// broken into flag bits and perhaps smaller integer counts.
+//
+//
+
 class AsyncCircularBufferStream
     : public AsyncMutableBufferStream<AsyncCircularBufferStream>,
       public AsyncConstBufferStream<AsyncCircularBufferStream> {
@@ -43,15 +56,9 @@ public:
     close_for_write();
   }
 
-  std::size_t max_space() const {
-    std::unique_lock<std::mutex> lock(mutex_);
-    return buffer_.max_size();
-  }
+  std::size_t max_space() const { return buffer_.max_size(); }
 
-  std::size_t space() const {
-    std::unique_lock<std::mutex> lock(mutex_);
-    return buffer_.space();
-  }
+  std::size_t space() const { return buffer_.space(); }
 
   void async_prepare(std::size_t minimum_size, const PrepareHandler &handler) {
     namespace error = boost::asio::error;
@@ -62,13 +69,56 @@ public:
       return;
     }
 
+    state_type observed = state_.load();
+    for (;;) {
+      if (get_closed_for_write(observed)) {
+        // Tried to write after closing for write.
+        handler(error::shut_down, {});
+        return;
+      }
+      if (get_closed_for_read(observed)) {
+        // Tried to write, but the other side has shut down.
+        handler(error::broken_pipe, {});
+        return;
+      }
+      if (get_write_in_progress(observed)) {
+        // There is already a write operation in progress.
+        handler(error::already_started, {});
+        return;
+      }
+      state_type new_state = set_write_in_progress(observed, true);
+      if (buffer_.space() >= minimum_size) {
+        // The reader can only increase the available space, so once this is
+        // true, we don't need to worry about it becoming untrue (because there
+        // should only be a single writer).
+        if (state_.compare_exchange_weak(observed, new_state)) {
+          // Success!
+          handler({}, buffer_.prepare());
+          return;
+        } // else loop until we get it
+      } else {
+        // Not enough space in the buffer; wait for data to be read.
+        new_state = set_minimum_to_prepare(new_state, minimum_size);
+        new_state = set_reader_calls_prepare_handler(new_state, true);
+        if (!prepare_handler_) {
+          prepare_handler_ = handler; // this is safe because `prepare_handler_`
+          // is only ever mutated by the writer TODO -
+          // fix this comment
+        }
+        if (state_.compare_exchange_weak(observed, new_state)) {
+          // Nothing else to do, because we've successfully set the
+          // reader-calls-prepare-handler bit, someone else will take care of
+          // completing the operation.
+          return;
+        }
+        return {};
+      }
+    }
+
     with_mutex_locked([&]() -> Action {
       if (closed_for_write_) {
-        // Tried to write after closing for write.
         return [&handler]() { handler(error::shut_down, {}); };
       } else if (closed_for_read_) {
-        // Tried to write, but the other side has shut down.
-        return [&handler]() { handler(error::broken_pipe, {}); };
       } else if (write_in_progress_) {
         // There is already a write operation in progress.
         return [&handler]() { handler(error::already_started, {}); };
@@ -80,7 +130,6 @@ public:
           prepare_handler_ = handler;
           return {};
         } else {
-          // Success!
           return [ buffers = buffer_.prepare(), &handler ]() {
             handler({}, buffers);
           };
@@ -272,13 +321,15 @@ private:
   }
 
   CircularBuffer buffer_;
-  mutable std::mutex mutex_;
+  std::atomic<std::size_t> state_;
+  /*
   bool write_in_progress_ = false;
   bool read_in_progress_ = false;
   bool closed_for_read_ = false;
   bool closed_for_write_ = false;
   std::size_t minimum_to_fetch_;
   std::size_t minimum_to_prepare_;
+  */
   FetchHandler fetch_handler_;
   PrepareHandler prepare_handler_;
 };

@@ -36,6 +36,7 @@ cc_test(
         "async_const_buffer_sequence-test.cc",
         "async_reader-test.cc",
         "async_writer-test.cc",
+        "circular_buffer-test.cc",
         "concat_const_buffer_stream-test.cc",
         "empty_const_buffer_stream-test.cc",
     ],
