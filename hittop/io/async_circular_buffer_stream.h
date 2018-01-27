@@ -2,6 +2,7 @@
 #define HITTOP_IO_ASYNC_CIRCULAR_BUFFER_STREAM_H
 
 #include <assert.h>
+#include <cstdint>
 #include <functional>
 #include <mutex>
 
@@ -69,73 +70,40 @@ public:
       return;
     }
 
-    state_type observed = state_.load();
+    state_type observed = state_.load(std::memory_order_acquire);
     for (;;) {
-      if (get_closed_for_write(observed)) {
+      assert(!(observed & kWriterIsBlocked));
+      if (observed & kClosedForWrite) {
         // Tried to write after closing for write.
         handler(error::shut_down, {});
-        return;
-      }
-      if (get_closed_for_read(observed)) {
+      } else if (observed & kClosedForRead) {
         // Tried to write, but the other side has shut down.
         handler(error::broken_pipe, {});
-        return;
-      }
-      if (get_write_in_progress(observed)) {
-        // There is already a write operation in progress.
-        handler(error::already_started, {});
-        return;
-      }
-      state_type new_state = set_write_in_progress(observed, true);
-      if (buffer_.space() >= minimum_size) {
-        // The reader can only increase the available space, so once this is
-        // true, we don't need to worry about it becoming untrue (because there
-        // should only be a single writer).
-        if (state_.compare_exchange_weak(observed, new_state)) {
-          // Success!
-          handler({}, buffer_.prepare());
-          return;
-        } // else loop until we get it
-      } else {
-        // Not enough space in the buffer; wait for data to be read.
-        new_state = set_minimum_to_prepare(new_state, minimum_size);
-        new_state = set_reader_calls_prepare_handler(new_state, true);
-        if (!prepare_handler_) {
-          prepare_handler_ = handler; // this is safe because `prepare_handler_`
-          // is only ever mutated by the writer TODO -
-          // fix this comment
-        }
-        if (state_.compare_exchange_weak(observed, new_state)) {
-          // Nothing else to do, because we've successfully set the
-          // reader-calls-prepare-handler bit, someone else will take care of
-          // completing the operation.
-          return;
-        }
-        return {};
-      }
-    }
-
-    with_mutex_locked([&]() -> Action {
-      if (closed_for_write_) {
-        return [&handler]() { handler(error::shut_down, {}); };
-      } else if (closed_for_read_) {
       } else if (write_in_progress_) {
         // There is already a write operation in progress.
-        return [&handler]() { handler(error::already_started, {}); };
-      } else {
+        handler(error::already_started, {});
+      } else if (buffer_.space() >= minimum_size) {
+        // Success!
         write_in_progress_ = true;
-        if (buffer_.space() < minimum_size) {
-          // Not enough space in the buffer; wait for data to be read.
-          minimum_to_prepare_ = minimum_size;
-          prepare_handler_ = handler;
-          return {};
-        } else {
-          return [ buffers = buffer_.prepare(), &handler ]() {
-            handler({}, buffers);
-          };
+        handler({}, buffer_.prepare());
+      } else if (observed & kReaderIsBlocked) {
+        // Deadlock detected; fail the prepare.
+        handler(error::would_block, {});
+      } else {
+        // Not enough space in the buffer; wait for data to be read.
+        write_in_progress_ = true;
+        prepare_handler_ = handler;
+        minimum_to_prepare_ = minimum_size;
+        const state_type updated = inc_writer_seq(observed) | kWriterIsBlocked;
+        if (!state_.compare_exchange_weak(observed, updated,
+                                          std::memory_order_acq_rel)) {
+          write_in_progress_ = false;
+          prepare_handler_ = nullptr;
+          continue;
         }
       }
-    });
+      break;
+    }
   }
 
   void commit(const std::size_t byte_count) {
@@ -200,15 +168,9 @@ public:
     });
   }
 
-  std::size_t max_size() const {
-    std::unique_lock<std::mutex> lock(mutex_);
-    return buffer_.max_size();
-  }
+  std::size_t max_size() const { return buffer_.max_size(); }
 
-  std::size_t size() const {
-    std::unique_lock<std::mutex> lock(mutex_);
-    return buffer_.size();
-  }
+  std::size_t size() const { return buffer_.size(); }
 
   void async_fetch(std::size_t minimum_size, const FetchHandler &handler) {
     namespace error = boost::asio::error;
@@ -219,118 +181,214 @@ public:
       return;
     }
 
-    with_mutex_locked([&]() -> Action {
-      if (closed_for_read_) {
+    state_type observed = state_.load(std::memory_order_acquire);
+    for (;;) {
+      assert(!(observed & kReaderIsBlocked));
+      if (observed & kClosedForRead) {
         // Tried to read after closing for read.
-        return [&handler]() { handler(error::shut_down, {}); };
+        handler(error::shut_down, {});
       } else if (read_in_progress_) {
         // There is already a fetch operation in progress.
-        return [&handler]() { handler(error::already_started, {}); };
-      } else if (minimum_size > buffer_.size()) {
-        if (closed_for_write_) {
-          // Not enough data and closed for write; this operation can never
-          // succeed.
-          return [&handler]() { handler(error::eof, {}); };
-        } else {
-          // Not enough data; have to wait.
-          read_in_progress_ = true;
-          minimum_to_fetch_ = minimum_size;
-          fetch_handler_ = handler;
-          return {};
-        }
-      } else {
+        handler(error::already_started, {});
+      } else if (buffer_.size() >= minimum_size) {
         // Success!
         read_in_progress_ = true;
-        return [ buffers = buffer_.data(), &handler ]() {
-          handler({}, buffers);
-        };
+        handler({}, buffer_.data());
+      } else if (observed & kClosedForWrite) {
+        // Not enough data and closed for write; this operation can never
+        // succeed.
+        handler(error::eof, {});
+      } else if (observed & kWriterIsBlocked) {
+        // Deadlock detected; fail the fetch.
+        handler(error::would_block, {});
+      } else {
+        // Not enough data; have to wait.
+        read_in_progress_ = true;
+        fetch_handler_ = handler;
+        minimum_to_fetch_ = minimum_size;
+        const state_type updated = inc_reader_seq(observed) | kReaderIsBlocked;
+        if (!state_.compare_exchange_weak(observed, updated,
+                                          std::memory_order_acq_rel)) {
+          read_in_progress_ = false;
+          fetch_handler_ = nullptr;
+          continue;
+        }
       }
-    });
+      break;
+    }
   }
 
   void consume(std::size_t byte_count) {
-    with_mutex_locked([&]() -> Action {
-      assert(byte_count <= buffer_.size());
-      assert(read_in_progress_);
-      buffer_.consume(byte_count);
-      read_in_progress_ = false;
-      if (prepare_handler_ && minimum_to_prepare_ <= buffer_.space()) {
-        auto action = [
-          handler = std::move(prepare_handler_), buffers = buffer_.prepare()
-        ]() {
-          handler({}, buffers);
-        };
-        prepare_handler_ = nullptr;
-        return std::move(action);
-      } else {
-        return {};
-      }
-    });
+    assert(read_in_progress_);
+    assert(byte_count <= buffer_.size());
+
+    read_in_progress_ = false;
+    if (byte_count == 0) {
+      return;
+    }
+    buffer_.consume(byte_count);
+
+    PrepareHandler local_prepare_handler;
+    {
+      state_type observed = state_.load(std::memory_order_acquire);
+      state_type updated;
+      do {
+        if ((observed & kWriterIsBlocked) && !(observed & kClosedForWrite) &&
+            (minimum_to_prepare_ <= buffer_.space())) {
+          if (!local_prepare_handler) {
+            local_prepare_handler.swap(prepare_handler_);
+          }
+          updated = observed & ~kWriterIsBlocked;
+        } else {
+          // Bump the reader update counter to notify the writer that the buffer
+          // may have changed.
+          updated = inc_reader_seq(observed);
+
+          // We have completely wrapped around without any indication that the
+          // writer has seen any updates from us.  This means updating the
+          // sequence now may not notify the writer of a change in buffer.  In
+          // fact, since we don't know which of our sequence numbers the writer
+          // may have seen last, there is no way to safely pick a value to set
+          // our sequence count to.  This is an extremely rare condition, so
+          // just abort for now.  It is actually recoverable; we can treat it as
+          // a stream error.
+          //
+          if (reader_seq_wrapped(updated)) {
+            // Fail! TODO - less dramatically
+            std::terminate();
+          }
+        }
+      } while (!state_.compare_exchange_weak(observed, updated,
+                                             std::memory_order_acq_rel));
+    }
+    if (local_prepare_handler) {
+      local_prepare_handler({}, buffer_.prepare());
+    }
   }
 
   void close_for_read() {
     namespace error = boost::asio::error;
 
-    with_mutex_locked([&]() -> Action {
-      if (closed_for_read_) {
-        return {};
+    state_type observed = state_.load(std::memory_order_acquire);
+    if (observed & kClosedForRead) {
+      // Already closed or closing.
+      return;
+    }
+
+    // CAS loop until we can set the closed bit.
+    state_type updated;
+    do {
+      updated = observed | kClosedForRead;
+    } while (!state_.compare_exchange_weak(observed, updated,
+                                           std::memory_order_release));
+
+    // Once the stream is marked as closed for reading, we can fail any
+    // operations that will never complete otherwise.
+    //
+    if (observed & kReaderIsBlocked) {
+      assert(!(observed & kWriterIsBlocked)); // assert no deadlock
+
+      // kReaderIsBlocked *BEFORE* kClosedForRead
+      if (fetch_handler_) {
+        util::SwapAndInvoke(fetch_handler_, error::broken_pipe);
       }
 
-      closed_for_read_ = true;
+    } else if (observed & kWriterIsBlocked) {
+      assert(!(observed & kReaderIsBlocked)); // assert no deadlock
+
+      // kWriterIsBlocked *BEFORE* kClosedForRead
       if (fetch_handler_) {
-        if (prepare_handler_) {
-          auto action = [
-            fetch_handler = std::move(fetch_handler_),
-            prepare_handler = std::move(prepare_handler_)
-          ]() {
-            fetch_handler(error::shut_down, {});
-            prepare_handler(error::broken_pipe, {});
-          };
-          fetch_handler_ = nullptr;
-          prepare_handler_ = nullptr;
-          return std::move(action);
-        } else {
-          auto action = [fetch_handler = std::move(fetch_handler_)]() {
-            fetch_handler(error::shut_down, {});
-          };
-          fetch_handler_ = nullptr;
-          return std::move(action);
-        }
-      } else if (prepare_handler_) {
-        auto action = [prepare_handler = std::move(prepare_handler_)]() {
-          prepare_handler(error::broken_pipe, {});
-        };
-        prepare_handler_ = nullptr;
-        return std::move(action);
-      } else {
-        return {};
+        util::SwapAndInvoke(prepare_handler_, error::broken_pipe);
       }
-    });
+    }
   }
 
 private:
-  template <typename F> void with_mutex_locked(F &&f) {
-    decltype(f()) action;
-    {
-      std::unique_lock<std::mutex> lock(mutex_);
-      action = std::forward<F>(f)();
+  using state_type = std::uint64_t;
+
+  enum {
+    kReaderIsBlockedPos,
+    kWriterIsBlockedPos,
+    kClosedForReadPos,
+    kClosedForWritePos,
+    kFlagBits
+  };
+
+  static constexpr state_type kFlag = 1;
+  static constexpr unsigned kSeqBits = (64 - kFlagBits) / 2;
+  static constexpr state_type kSeqMask = (kFlag << kSeqBits) - 1;
+
+  static constexpr state_type kReaderIsBlocked = kFlag << kReaderIsBlockedPos;
+  static constexpr state_type kWriterIsBlocked = kFlag << kWriterIsBlockedPos;
+  static constexpr state_type kClosedForRead = kFlag << kClosedForReadPos;
+  static constexpr state_type kClosedForWrite = kFlag << kClosedForWritePos;
+
+  static constexpr state_type kReaderSeqMask = kSeqMask << kFlagBits;
+  static constexpr state_type kReaderInc = kFlag << kFlagBits;
+  static constexpr state_type kWriterSeqMask = kSeqMask
+                                               << (kFlagBits + kSeqBits);
+  static constexpr state_type kWriterInc = kFlag << (kFlagBits + kSeqBits);
+
+  state_type inc_reader_seq(const state_type observed) {
+    reader_observes_writer_seq(observed);
+    return inc_seq(observed, kReaderSeqMask, kReaderInc);
+  }
+
+  state_type inc_writer_seq(const state_type observed) {
+    writer_observes_reader_seq(observed);
+    return inc_seq(observed, kWriterSeqMask, kWriterInc);
+  }
+
+  state_type inc_seq(const state_type observed, const state_type mask,
+                     const state_type inc) {
+    return (observed & ~mask) | (((observed & mask) + inc) & mask);
+  }
+
+  bool reader_seq_wrapped(const state_type updated) {
+    return seq_wrapped(updated, last_seq_observed_by_writer_);
+  }
+
+  bool writer_seq_wrapped(const state_type updated) {
+    return seq_wrapped(updated, last_seq_observed_by_reader_);
+  }
+
+  bool seq_wrapped(const state_type updated, const last_observed) {
+    return (updated & (kReaderSeqMask | kWriterSeqMask)) == last_observed;
+  }
+
+  void writer_observes_reader_seq(const state_type observed) {
+    if ((observed & kWriterSeqMask) !=
+        (last_seq_observed_by_writer_ & kWriterSeqMask)) {
+      last_seq_observed_by_writer_ =
+          observed & (kWriterSeqMask | kReaderSeqMask);
     }
-    if (action) {
-      action();
+  }
+
+  void reader_observes_writer_seq(const state_type observed) {
+    if ((observed & kReaderSeqMask) !=
+        (last_seq_observed_by_reader_ & kReaderSeqMask)) {
+      last_seq_observed_by_reader_ =
+          observed & (kWriterSeqMask | kReaderSeqMask);
     }
   }
 
   CircularBuffer buffer_;
-  std::atomic<std::size_t> state_;
-  /*
+  std::atomic<state_type> state_;
   bool write_in_progress_ = false;
   bool read_in_progress_ = false;
-  bool closed_for_read_ = false;
-  bool closed_for_write_ = false;
+  state_type writer_seq_observed_by_reader_ = 0;
+  state_type reader_seq_observed_by_writer_ = 0;
+
+  // Only used by readers when kReaderIsBlocked bit is clear;
+  // only used by writers when kReaderIsBlocked bit is set.
+  // Do not touch when kClosedForRead bit is true.
   std::size_t minimum_to_fetch_;
-  std::size_t minimum_to_prepare_;
-  */
   FetchHandler fetch_handler_;
+
+  // Only used by writers when kWriterIsBlocked is false;
+  // only used by readers when kWriterIsBlocked is true.
+  // Do not touch when kClosedForWrite bit is true.
+  std::size_t minimum_to_prepare_;
   PrepareHandler prepare_handler_;
 };
 
