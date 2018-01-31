@@ -53,6 +53,15 @@ private:
   std::function<TailCall()> k_;
 };
 
+// Fully unwinds the passed deferred tail call.
+//
+template <typename TC> void unwind(TC &&arg) {
+  TailCall tc = std::forward<TC>(arg);
+  while (tc) {
+    tc = tc();
+  }
+}
+
 } // namespace util
 } // namespace hittop
 
