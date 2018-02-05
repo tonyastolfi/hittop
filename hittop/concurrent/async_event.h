@@ -51,8 +51,9 @@ public:
     auto observed_state = LoadState(std::memory_order_acquire);
     for (;;) {
       if (observed_state == kReachedCallsListener) {
-        util::SwapAndInvoke(listener_);
+        auto local_listener = std::move(listener_);
         util::SwapAndInvoke(cleanup_);
+        local_listener();
         return;
       } else {
         // Acquire order is needed so that we can see all of `listener_`;
@@ -80,8 +81,9 @@ public:
     auto observed_state = LoadState(std::memory_order_acquire);
     for (;;) {
       if (observed_state == kReachedCallsListener) {
-        util::ScopeExit janitor(std::move(cleanup_));
-        return std::move(listener_);
+        auto local_listener = std::move(listener_);
+        util::SwapAndInvoke(cleanup_);
+        return std::move(local_listener);
       } else {
         // See comment in Reached above.
         if (state_.compare_exchange_weak(observed_state, kThenCallsListener,
@@ -110,8 +112,9 @@ public:
         return;
       }
       if (observed_state == kThenCallsListener) {
-        util::SwapAndInvoke(listener_);
+        auto local_listener = std::move(listener_);
         util::SwapAndInvoke(cleanup_);
+        local_listener();
         return;
       }
     }
@@ -141,14 +144,15 @@ public:
         return {};
       }
       if (observed_state == kThenCallsListener) {
-        util::ScopeExit janitor(std::move(cleanup_));
-        return std::move(listener_);
+        auto local_listener = std::move(listener_);
+        util::SwapAndInvoke(cleanup_);
+        return std::move(local_listener);
       }
     }
   }
 
 private:
-  PossibleStates LoadState(const std::memory_order order = t) const {
+  PossibleStates LoadState(const std::memory_order order) const {
     return static_cast<PossibleStates>(state_.load(order));
   }
 
