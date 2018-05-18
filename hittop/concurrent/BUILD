@@ -1,6 +1,8 @@
+# -*- mode: python; -*-
 cc_library(
     name = "concurrent",
     hdrs = [
+        "async_event.h",
         "async_parent_task.h",
         "async_queue.h",
         "async_task.h",
@@ -36,6 +38,23 @@ cc_test(
         "-std=c++14",
     ],
     deps = [
+        ":concurrent",
+        "@gtest//:main",
+        "@boost//:headers",
+    ],
+)
+
+cc_test(
+    name = "async_event-test",
+    srcs = [
+        "async_event-test.cc",
+    ],
+    copts = [
+        "-Iexternal/gtest/include",
+        "-std=c++14",
+    ],
+    deps = [
+        "//hittop",
         ":concurrent",
         "@gtest//:main",
         "@boost//:headers",

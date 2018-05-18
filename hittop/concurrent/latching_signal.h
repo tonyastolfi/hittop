@@ -52,17 +52,23 @@ private:
   };
 
   template <typename Slot>
-  struct ConnectVisitor : boost::static_visitor<boost::optional<Connection>> {
-    Slot &&slot;
+  class ConnectVisitor
+      : public boost::static_visitor<boost::optional<Connection>> {
+  public:
+    template <typename... A>
+    explicit ConnectVisitor(A &&... a) : slot_{std::forward<A>(a)...} {}
 
     boost::optional<Connection> operator()(Signal &signal) const {
-      return signal.connect(std::forward<Slot>(slot));
+      return signal.connect(std::forward<Slot>(slot_));
     }
 
     boost::optional<Connection> operator()(const ArgsTuple &args) const {
-      util::tuples::Apply(std::forward<Slot>(slot), args);
+      util::tuples::Apply(std::forward<Slot>(slot_), args);
       return boost::none;
     }
+
+  private:
+    Slot &&slot_;
   };
 
   template <typename Slot>
@@ -136,7 +142,8 @@ public:
   // slot immediately with the stored args.
   template <typename Slot> boost::optional<Connection> Connect(Slot &&slot) {
     std::unique_lock<std::mutex> lock(mutex_);
-    return boost::apply_visitor(ConnectVisitor<Slot>{&slot}, *state_);
+    return boost::apply_visitor(ConnectVisitor<Slot>{std::forward<Slot>(slot)},
+                                *state_);
   }
 
   template <typename Slot> DeferredConnection ConnectDeferred(Slot &&slot) {
@@ -147,7 +154,8 @@ public:
 
   template <typename... A> bool operator()(A &&... a) {
     std::unique_lock<std::mutex> lock(mutex_);
-    // Intentionally not using visitor here so that we don't need to shuttle the
+    // Intentionally not using visitor here so that we don't need to shuttle
+    // the
     // args around.
     if (state_->which() == 0) {
       Signal signal = std::move(boost::get<Signal>(*state_));
@@ -162,7 +170,8 @@ public:
 
   template <typename... A> DeferredInvocation InvokeDeferred(A &&... a) {
     std::unique_lock<std::mutex> lock(mutex_);
-    // Intentionally not using visitor here so that we don't need to shuttle the
+    // Intentionally not using visitor here so that we don't need to shuttle
+    // the
     // args around.
     if (state_->which() == 0) {
       Signal signal = std::move(boost::get<Signal>(*state_));

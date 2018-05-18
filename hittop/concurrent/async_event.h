@@ -8,6 +8,7 @@
 
 #include "boost/smart_ptr/intrusive_ref_counter.hpp"
 
+#include "hittop/assert.h"
 #include "hittop/util/scope_exit.h"
 #include "hittop/util/swap_and_invoke.h"
 #include "hittop/util/tail_call.h"
@@ -15,9 +16,9 @@
 namespace hittop {
 namespace concurrent {
 
-// Enforces ordering on two actions.  An action is considered any callable type
-// that takes no arguments (return value is ignored unless it is of type
-// TailCall; see ReachedTC/ThenTC below).
+// Provides a single-use synchronization point.  A cleanup function may be
+// passed in at construction time; it will be invoked after the event has been
+// Reached but before the Listener is invoked.
 //
 class AsyncEvent {
 public:
@@ -32,6 +33,9 @@ public:
 
   AsyncEvent() : cleanup_([]() {}) { state_ = kInitial; }
 
+  AsyncEvent(const AsyncEvent &) = delete;
+  AsyncEvent &operator=(const AsyncEvent &) = delete;
+
   template <typename F>
   explicit AsyncEvent(F &&cleanup_action)
       : cleanup_(std::forward<F>(cleanup_action)) {
@@ -44,11 +48,13 @@ public:
   //
   PossibleStates state() const { return LoadState(std::memory_order_seq_cst); }
 
-  // Call f() and either call the action passed to Then or arrange for
-  // Then to call its own action when it is called.
+  // Indicate that the event has happened; this allows the listener passed into
+  // Then to be invoked.  The listener will be invoked directly from this method
+  // if the call to Then happens before the call to Reached.  Calling this
+  // method twice is illegal and will result in undefined behavior.
   //
   void Reached() {
-    auto observed_state = LoadState(std::memory_order_acquire);
+    state_type observed_state = LoadState(std::memory_order_acquire);
     for (;;) {
       if (observed_state == kReachedCallsListener) {
         auto local_listener = std::move(listener_);
@@ -67,23 +73,22 @@ public:
     }
   }
 
-  // Call f() and either arrange for Then/ThenTC to run the second
-  // action 'g' or return a non-empty TailCall that runs g and returns any
-  // tail-position continuations of g.  Example usage:
+  // Same as `Reached` except that the listener is never invoked from within
+  // `ReachedTC`.  The TailCall should be resolved using:
   //
-  // unwind(pair->ReachedTC();
+  // unwind(event.ReachedTC();
   //
-  // Use this variant of Then in cases where there may be a very large
-  // number of nested tail calls within the passed action.  It allows a kind of
+  // Use this variant of `Reached` in cases where there may be a very large
+  // number of nested tail calls within the listener.  It allows a kind of
   // "manual" tail-call optimization that prevents the stack from growing.
   //
   TailCall ReachedTC() {
-    auto observed_state = LoadState(std::memory_order_acquire);
+    state_type observed_state = LoadState(std::memory_order_acquire);
     for (;;) {
       if (observed_state == kReachedCallsListener) {
         auto local_listener = std::move(listener_);
         util::SwapAndInvoke(cleanup_);
-        return std::move(local_listener);
+        return local_listener;
       } else {
         // See comment in Reached above.
         if (state_.compare_exchange_weak(observed_state, kThenCallsListener,
@@ -99,11 +104,13 @@ public:
   // made.
   //
   template <typename Fn> void Then(Fn &&fn) {
-    auto observed_state = LoadState(std::memory_order_acquire);
+    state_type observed_state = LoadState(std::memory_order_acquire);
     if (observed_state == kThenCallsListener) {
-      return std::forward<Fn>(fn)();
+      util::SwapAndInvoke(cleanup_);
+      std::forward<Fn>(fn)();
+      return;
     }
-    assert(observed_state == kInitial);
+    HITTOP_ASSERT(observed_state == kInitial);
 
     listener_ = std::forward<Fn>(fn);
     for (;;) {
@@ -131,7 +138,7 @@ public:
   // "manual" tail-call optimization that prevents the stack from growing.
   //
   template <typename Fn> TailCall ThenTC(Fn &&fn) {
-    auto observed_state = LoadState(std::memory_order_acquire);
+    state_type observed_state = LoadState(std::memory_order_acquire);
     if (observed_state == kThenCallsListener) {
       util::ScopeExit janitor(std::move(cleanup_));
       return std::forward<Fn>(fn);
@@ -146,18 +153,20 @@ public:
       if (observed_state == kThenCallsListener) {
         auto local_listener = std::move(listener_);
         util::SwapAndInvoke(cleanup_);
-        return std::move(local_listener);
+        return local_listener;
       }
     }
   }
 
 private:
+  using state_type = std::uint8_t;
+
   PossibleStates LoadState(const std::memory_order order) const {
     return static_cast<PossibleStates>(state_.load(order));
   }
 
   Cleanup cleanup_;
-  std::atomic<std::uint8_t> state_;
+  std::atomic<state_type> state_;
   TailCall listener_;
 };
 
